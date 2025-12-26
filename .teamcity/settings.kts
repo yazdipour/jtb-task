@@ -10,6 +10,6 @@
 
 import jetbrains.buildServer.configs.kotlin.*
 
-version = "2024.07"
+version = "2025.11"
 
 project(ReproducibleDocsProject)
