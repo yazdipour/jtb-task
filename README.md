@@ -64,10 +64,6 @@ sha256sum docs.tar.gz # Should be identical for same commit
 ## Diagram
 
 ```mermaid
----
-config:
-  layout: elk
----
 flowchart TB
  subgraph s1["External World (Unreliable)"]
         MarketingSite[("🌐 Marketing Website")]
