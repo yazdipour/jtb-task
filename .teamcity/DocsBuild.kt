@@ -46,9 +46,6 @@ object DocsBuild : BuildType({
         // Commit hash from VCS (automatically populated by TeamCity)
         param("commit.hash", "%build.vcs.number%")
         
-        // Marketing URL for release notes
-        param("env.MARKETING_URL", "%env.MARKETING_URL%")
-        
         // Timeout for external requests (seconds)
         param("fetch.timeout", "10")
     }
@@ -141,7 +138,7 @@ object DocsBuild : BuildType({
                 echo "=============================================="
                 
                 # Run Maven javadoc generation
-                mvn clean javadoc:javadoc -B -q
+                /usr/bin/mvn clean javadoc:javadoc -B -q
                 
                 echo ""
                 echo "Javadoc generation completed"
