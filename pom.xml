@@ -24,7 +24,8 @@
         
         <!-- CRITICAL: Fixed timestamp for reproducible builds -->
         <!-- This ensures all generated files have the same modification time -->
-        <project.build.outputTimestamp>1980-01-01T00:00:00Z</project.build.outputTimestamp>
+        <!-- Must be >= 1980-01-01T00:00:02Z for javadoc plugin -->
+        <project.build.outputTimestamp>1980-01-01T00:00:02Z</project.build.outputTimestamp>
         
         <!-- Fixed plugin versions for reproducibility -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
