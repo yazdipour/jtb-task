@@ -19,8 +19,6 @@ import jetbrains.buildServer.configs.kotlin.vcs.GitVcsRoot
  * - Release notes snapshotting per commit
  */
 object ReproducibleDocsProject : Project({
-    id("ReproducibleDocsBuild")
-    name = "Reproducible Documentation Build"
     description = "Automated documentation pipeline with byte-for-byte reproducible builds"
 
     // VCS Root configuration
