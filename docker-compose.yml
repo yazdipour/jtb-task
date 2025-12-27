@@ -40,6 +40,11 @@ services:
       # Mount Docker socket for Docker-in-Docker builds
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+    # Pre-install Maven and Java
+    command: >
+      bash -c "apt-get update -qq &&
+               apt-get install -y -qq maven openjdk-17-jdk &&
+               /opt/buildagent/bin/agent.sh run"
 
   postgres:
     image: postgres:15
