@@ -117,6 +117,7 @@ cd "${STAGING_DIR}"
 find docs -type f -o -type d | sort > ../file-list.txt
 
 # Create archive with explicit file list for deterministic ordering
+# Use gzip -n to avoid storing timestamp in gzip header
 tar --sort=name \
     --mtime="${FIXED_TIMESTAMP}" \
     --owner=0 \
@@ -124,7 +125,8 @@ tar --sort=name \
     --numeric-owner \
     --format=gnu \
     --no-recursion \
-    -czf "../${OUTPUT_FILE}" \
+    --use-compress-program='gzip -n' \
+    -cf "../${OUTPUT_FILE}" \
     -T ../file-list.txt
 
 cd ..
