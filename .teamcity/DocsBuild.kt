@@ -103,7 +103,7 @@ object DocsBuild : BuildType({
                 subCommand = "run"
                 commandArgs = """
                     --rm 
-                    -v "%teamcity.build.checkoutDir%":/workspace 
+                    -v %teamcity.build.checkoutDir%:/workspace 
                     -w /workspace 
                     %docker.image.tag% 
                     mvn clean javadoc:javadoc -B -q
