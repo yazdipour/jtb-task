@@ -159,9 +159,6 @@ object DocsBuild : BuildType({
             
             // Trigger on all branches
             branchFilter = "+:*"
-            
-            // Quiet period to batch rapid commits
-            quietPeriodMode = VcsTrigger.QuietPeriodMode.USE_DEFAULT
         }
     }
 

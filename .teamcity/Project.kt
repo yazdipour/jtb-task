@@ -40,18 +40,6 @@ object ReproducibleDocsProject : Project({
         // Docker image tag
         param("docker.image.tag", "docs-builder:latest")
     }
-
-    // Project features
-    features {
-        // Enable versioned settings
-        versionedSettings {
-            id = "PROJECT_EXT_1"
-            mode = VersionedSettings.Mode.ENABLED
-            rootExtId = DocsVcsRoot.id.toString()
-            showChanges = true
-            settingsFormat = VersionedSettings.Format.KOTLIN
-        }
-    }
 })
 
 /**
