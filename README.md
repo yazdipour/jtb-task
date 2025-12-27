@@ -19,7 +19,7 @@ flowchart LR
 
     style SUCCESS fill:#ffffcc
     style END fill:#ccffcc
-``
+```
 
 This project generates Javadoc and packages it into a reproducible archive (`docs.tar.gz`) that produces the same checksum every time, regardless of when or where you build it.
 
