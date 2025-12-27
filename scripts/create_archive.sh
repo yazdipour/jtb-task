@@ -100,6 +100,11 @@ chmod -R u=rwX,go=rX "${STAGING_DIR}"
 find "${STAGING_DIR}" -type f -exec chmod 644 {} \;
 find "${STAGING_DIR}" -type d -exec chmod 755 {} \;
 
+# Compute checksum of staging directory content to verify input stability
+log "Computing checksum of staging directory content..."
+STAGING_CHECKSUM=$(find "${STAGING_DIR}" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+log "Staging Directory Content Checksum: ${STAGING_CHECKSUM}"
+
 # Create the reproducible archive
 log "Creating reproducible archive: ${OUTPUT_FILE}"
 

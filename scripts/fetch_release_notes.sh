@@ -95,7 +95,6 @@ else
 # The marketing website was unavailable when this build ran.
 # Commit: ${COMMIT_HASH}
 # Attempted URL: ${MARKETING_URL}
-# Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')
 #
 # This empty placeholder ensures build reproducibility.
 EOF
