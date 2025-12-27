@@ -96,19 +96,23 @@ object DocsBuild : BuildType({
         }
 
         // Step 3: Run Javadoc generation in Docker container
-        dockerCommand {
+        script {
             id = "RUN_JAVADOC_BUILD"
             name = "Generate Javadoc in Docker"
-            commandType = other {
-                subCommand = "run"
-                commandArgs = """
-                    --rm 
-                    -v %teamcity.build.checkoutDir%:/workspace 
-                    -w /workspace 
-                    %docker.image.tag% 
-                    mvn clean javadoc:javadoc -B -q
-                """.trimIndent().replace("\n", " ")
-            }
+            scriptContent = """
+                #!/bin/bash
+                set -euo pipefail
+                
+                echo "=============================================="
+                echo "Step 3: Generating Javadoc"
+                echo "=============================================="
+                
+                # Run Maven javadoc generation
+                mvn clean javadoc:javadoc -B -q
+                
+                echo ""
+                echo "Javadoc generation completed"
+            """.trimIndent()
         }
 
         // Step 4: Create reproducible archive
