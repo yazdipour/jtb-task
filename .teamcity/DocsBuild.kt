@@ -125,10 +125,10 @@ object DocsBuild : BuildType({
             }
         }
 
-        // Step 3: Run Javadoc generation
+        // Step 3: Run Javadoc generation in Docker container
         script {
             id = "RUN_JAVADOC_BUILD"
-            name = "Generate Javadoc"
+            name = "Generate Javadoc in Docker"
             scriptContent = """
                 #!/bin/bash
                 set -euo pipefail
@@ -137,22 +137,8 @@ object DocsBuild : BuildType({
                 echo "Step 3: Generating Javadoc"
                 echo "=============================================="
                 
-                # Install Maven if not present
-                if ! command -v mvn &> /dev/null; then
-                    echo "Maven not found, installing..."
-                    MAVEN_VERSION=3.9.9
-                    cd /tmp
-                    wget -q https://archive.apache.org/dist/maven/maven-3/${'$'}MAVEN_VERSION/binaries/apache-maven-${'$'}MAVEN_VERSION-bin.tar.gz
-                    tar xzf apache-maven-${'$'}MAVEN_VERSION-bin.tar.gz
-                    export PATH="/tmp/apache-maven-${'$'}MAVEN_VERSION/bin:${'$'}PATH"
-                    cd -
-                fi
-                
-                # Verify Java
-                java -version
-                
                 # Run Maven javadoc generation
-                mvn clean javadoc:javadoc -B -q
+                /usr/bin/mvn clean javadoc:javadoc -B -q
                 
                 echo ""
                 echo "Javadoc generation completed"

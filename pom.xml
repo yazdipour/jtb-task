@@ -55,8 +55,7 @@
                 <version>${maven-javadoc-plugin.version}</version>
                 <configuration>
                     <!-- Output directory for generated Javadoc -->
-                    <reportOutputDirectory>${project.build.directory}/reports</reportOutputDirectory>
-                    <destDir>apidocs</destDir>
+                    <outputDirectory>${project.build.directory}/reports/apidocs</outputDirectory>
                     
                     <!-- Reproducibility settings -->
                     <notimestamp>true</notimestamp>
