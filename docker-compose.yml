@@ -28,7 +28,9 @@ services:
     environment:
       - SERVER_URL=http://teamcity-server:8111
       - DOCKER_IN_DOCKER=start
+      - AGENT_NAME=docker-agent
     privileged: true
+    user: root
     volumes:
       - teamcity-agent-conf:/data/teamcity_agent/conf
       - teamcity-agent-work:/opt/buildagent/work
