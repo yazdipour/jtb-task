@@ -169,13 +169,4 @@ object DocsBuild : BuildType({
             id = "DOCKER_SUPPORT"
         }
     }
-
-    // Requirements
-    requirements {
-        // Require Docker on the build agent
-        contains("docker.server.version", "")
-        
-        // Require bash shell
-        exists("env.SHELL")
-    }
 })
