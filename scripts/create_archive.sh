@@ -144,9 +144,9 @@ if [ -f "${OUTPUT_FILE}" ]; then
     
     # List archive contents for verification
     log "Archive contents:"
-    tar -tzvf "${OUTPUT_FILE}" | head -20
+    tar -tzvf "${OUTPUT_FILE}" 2>/dev/null | head -20 || true
     
-    FILE_COUNT=$(tar -tzf "${OUTPUT_FILE}" | wc -l)
+    FILE_COUNT=$(tar -tzf "${OUTPUT_FILE}" 2>/dev/null | wc -l || echo "0")
     log "Total files in archive: ${FILE_COUNT}"
 else
     log "ERROR: Failed to create archive"
