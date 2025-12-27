@@ -55,6 +55,39 @@ object DocsBuild : BuildType({
 
     // Build steps
     steps {
+        // Step 0: Install Maven and Java
+        script {
+            id = "INSTALL_TOOLS"
+            name = "Install Build Tools"
+            scriptContent = """
+                #!/bin/bash
+                set -euo pipefail
+                
+                echo "=============================================="
+                echo "Installing Maven and Java"
+                echo "=============================================="
+                
+                # Check if running as root or with sudo
+                if [ "$(id -u)" -eq 0 ] || sudo -n true 2>/dev/null; then
+                    SUDO=""
+                    [ "$(id -u)" -ne 0 ] && SUDO="sudo"
+                    
+                    # Install Java and Maven
+                    $SUDO apt-get update -qq
+                    $SUDO apt-get install -y -qq maven openjdk-17-jdk
+                else
+                    echo "Note: Running without sudo. Assuming tools are already installed."
+                fi
+                
+                # Verify installations
+                java -version
+                mvn -version
+                
+                echo ""
+                echo "Tools installation completed"
+            """.trimIndent()
+        }
+        
         // Step 1: Fetch release notes with graceful failure handling
         script {
             id = "FETCH_RELEASE_NOTES"
