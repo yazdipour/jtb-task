@@ -137,8 +137,18 @@ object DocsBuild : BuildType({
                 echo "Step 3: Generating Javadoc"
                 echo "=============================================="
                 
-                # Run Maven javadoc generation
-                /usr/bin/mvn clean javadoc:javadoc -B -q
+                # Find and run Maven javadoc generation
+                export PATH="/usr/bin:/usr/local/bin:${'$'}PATH"
+                which mvn || (echo "Maven not found, trying to locate..." && find /usr -name mvn 2>/dev/null | head -1)
+                
+                MVN=$(which mvn || find /usr -name mvn 2>/dev/null | head -1)
+                if [ -z "${'$'}MVN" ]; then
+                    echo "ERROR: Maven not found"
+                    exit 1
+                fi
+                
+                echo "Using Maven at: ${'$'}MVN"
+                ${'$'}MVN clean javadoc:javadoc -B -q
                 
                 echo ""
                 echo "Javadoc generation completed"
