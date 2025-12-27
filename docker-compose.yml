@@ -8,43 +8,23 @@ services:
       - "8111:8111"
     volumes:
       - teamcity-server-data:/data/teamcity_server/datadir
-      - teamcity-server-logs:/opt/teamcity/logs
     environment:
-      - TEAMCITY_SERVER_MEM_OPTS=-Xmx2g -XX:MaxPermSize=270m -XX:ReservedCodeCacheSize=640m
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8111/healthCheck/ready"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
+      - TEAMCITY_SERVER_MEM_OPTS=-Xmx2g
     restart: unless-stopped
 
   teamcity-agent:
     image: jetbrains/teamcity-agent:2025.11.1
     container_name: teamcity-agent
     depends_on:
-      teamcity-server:
-        condition: service_started
+      - teamcity-server
     environment:
       - SERVER_URL=http://teamcity-server:8111
       - DOCKER_IN_DOCKER=start
-      - AGENT_NAME=docker-agent
     privileged: true
-    user: root
     volumes:
       - teamcity-agent-conf:/data/teamcity_agent/conf
-      - teamcity-agent-work:/opt/buildagent/work
-      - teamcity-agent-tools:/opt/buildagent/tools
-      - teamcity-agent-plugins:/opt/buildagent/plugins
-      - teamcity-agent-system:/opt/buildagent/system
-      # Mount Docker socket for Docker-in-Docker builds
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
-    # Pre-install Maven and Java
-    command: >
-      bash -c "apt-get update -qq &&
-               apt-get install -y -qq maven openjdk-17-jdk &&
-               /opt/buildagent/bin/agent.sh run"
 
   postgres:
     image: postgres:15
@@ -59,18 +39,5 @@ services:
 
 volumes:
   teamcity-server-data:
-    driver: local
-  teamcity-server-logs:
-    driver: local
   teamcity-agent-conf:
-    driver: local
-  teamcity-agent-work:
-    driver: local
-  teamcity-agent-tools:
-    driver: local
-  teamcity-agent-plugins:
-    driver: local
-  teamcity-agent-system:
-    driver: local
   postgres-data:
-    driver: local

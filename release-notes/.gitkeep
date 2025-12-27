@@ -1,5 +1,0 @@
-# This directory stores cached release notes per commit hash.
-# Files are named: {commit-hash}.txt
-# 
-# These files ensure reproducible builds by snapshotting
-# external release notes at the time of the first build.

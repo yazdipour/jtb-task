@@ -76,3 +76,8 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Build artifacts
+release-notes/
+docs.tar.gz
+.archive-staging/
