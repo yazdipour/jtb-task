@@ -27,6 +27,7 @@ SOURCE_DATE_EPOCH=315532800
 
 # Export for tools that respect it
 export SOURCE_DATE_EPOCH
+export LC_ALL=C
 
 # Function to log with timestamp
 log() {
@@ -93,9 +94,11 @@ Reproducibility:
 EOF
 
 # Normalize timestamps on all files in staging directory
-log "Normalizing file timestamps..."
-find "${STAGING_DIR}" -type f -exec touch -d "${FIXED_TIMESTAMP}" {} \;
-find "${STAGING_DIR}" -type d -exec touch -d "${FIXED_TIMESTAMP}" {} \;
+log "Normalizing file timestamps and permissions..."
+find "${STAGING_DIR}" -exec touch -d "${FIXED_TIMESTAMP}" {} \;
+chmod -R u=rwX,go=rX "${STAGING_DIR}"
+find "${STAGING_DIR}" -type f -exec chmod 644 {} \;
+find "${STAGING_DIR}" -type d -exec chmod 755 {} \;
 
 # Create the reproducible archive
 log "Creating reproducible archive: ${OUTPUT_FILE}"
