@@ -125,10 +125,10 @@ object DocsBuild : BuildType({
             }
         }
 
-        // Step 3: Run Javadoc generation in Docker container
+        // Step 3: Run Javadoc generation
         script {
             id = "RUN_JAVADOC_BUILD"
-            name = "Generate Javadoc in Docker"
+            name = "Generate Javadoc"
             scriptContent = """
                 #!/bin/bash
                 set -euo pipefail
@@ -137,18 +137,22 @@ object DocsBuild : BuildType({
                 echo "Step 3: Generating Javadoc"
                 echo "=============================================="
                 
-                # Find and run Maven javadoc generation
-                export PATH="/usr/bin:/usr/local/bin:${'$'}PATH"
-                which mvn || (echo "Maven not found, trying to locate..." && find /usr -name mvn 2>/dev/null | head -1)
-                
-                MVN=$(which mvn || find /usr -name mvn 2>/dev/null | head -1)
-                if [ -z "${'$'}MVN" ]; then
-                    echo "ERROR: Maven not found"
-                    exit 1
+                # Install Maven if not present
+                if ! command -v mvn &> /dev/null; then
+                    echo "Maven not found, installing..."
+                    MAVEN_VERSION=3.9.9
+                    cd /tmp
+                    wget -q https://archive.apache.org/dist/maven/maven-3/${'$'}MAVEN_VERSION/binaries/apache-maven-${'$'}MAVEN_VERSION-bin.tar.gz
+                    tar xzf apache-maven-${'$'}MAVEN_VERSION-bin.tar.gz
+                    export PATH="/tmp/apache-maven-${'$'}MAVEN_VERSION/bin:${'$'}PATH"
+                    cd -
                 fi
                 
-                echo "Using Maven at: ${'$'}MVN"
-                ${'$'}MVN clean javadoc:javadoc -B -q
+                # Verify Java
+                java -version
+                
+                # Run Maven javadoc generation
+                mvn clean javadoc:javadoc -B -q
                 
                 echo ""
                 echo "Javadoc generation completed"
