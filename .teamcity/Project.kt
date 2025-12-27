@@ -67,10 +67,10 @@ object DocsVcsRoot : GitVcsRoot({
     name = "Documentation Repository"
     
     // TODO: Replace with your actual repository URL
-    url = "https://github.com/example/reproducible-docs.git"
+    url = "https://github.com/yazdipour/jtb-task.git"
     
     // Default branch
-    branch = "refs/heads/main"
+    branch = "refs/heads/master"
     
     // Branch specification for builds
     branchSpec = """

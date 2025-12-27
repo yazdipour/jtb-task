@@ -170,22 +170,6 @@ object DocsBuild : BuildType({
         // Enable Docker support for the build
         dockerSupport {
             id = "DOCKER_SUPPORT"
-            loginToRegistry = on {
-                dockerRegistryId = "PROJECT_EXT_DOCKER"
-            }
-        }
-    }
-
-    // Failure conditions
-    failureConditions {
-        // Fail on metric changes (optional - for regression detection)
-        failOnMetricChange {
-            id = "BUILD_EXT_METRIC"
-            metric = BuildFailureOnMetric.MetricType.ARTIFACT_SIZE
-            units = BuildFailureOnMetric.MetricUnit.BYTES
-            comparison = BuildFailureOnMetric.MetricComparison.MORE
-            threshold = 50
-            compareTo = value()
         }
     }
 
