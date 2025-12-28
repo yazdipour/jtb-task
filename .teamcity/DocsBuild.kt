@@ -97,7 +97,7 @@ object DocsBuild : BuildType({
                 echo "Step 1: Fetching Release Notes"
                 echo "=============================================="
                 echo "Commit Hash: %commit.hash%"
-                echo "Marketing URL: %env.MARKETING_URL%"
+                echo "Marketing URL: ${'$'}MARKETING_URL"
                 echo ""
                 
                 # Make script executable
