@@ -4,23 +4,6 @@ A demo project showing how to create reproducible documentation builds in TeamCi
 
 ## What It Does
 
-```mermaid
-flowchart LR
-    START[Start] --> CHECK{Cached file<br/>exists?}
-    CHECK -->|Yes| REUSE[Reuse cached<br/>release notes]
-    CHECK -->|No| DOWNLOAD[Download from<br/>marketing site]
-    DOWNLOAD --> SUCCESS{Download<br/>succeeded?}
-    SUCCESS -->|Yes| CACHE[Cache to<br/>release-notes/]
-    SUCCESS -->|No| EMPTY[Create empty<br/>placeholder]
-    CACHE --> BUILD[Continue build]
-    EMPTY --> BUILD
-    REUSE --> BUILD
-    BUILD --> END[Build succeeds]
-
-    style SUCCESS fill:#ffffcc
-    style END fill:#ccffcc
-```
-
 This project generates Javadoc and packages it into a reproducible archive (`docs.tar.gz`) that produces the same checksum every time, regardless of when or where you build it.
 
 The build also fetches release notes from an external website, but caches them by commit hash so builds remain reproducible even if the website changes or goes down.
@@ -44,7 +27,34 @@ sha256sum docs.tar.gz
 ```bash
 docker-compose up -d
 # Open http://localhost:8111 and follow setup wizard
+
+# To run the test
+docker compose --profile test run --rm test
 ```
+
+## Strategy
+
+```mermaid
+flowchart LR
+    START[Start] --> CHECK{Cached file<br/>exists?}
+    CHECK -->|Yes| REUSE[Reuse cached<br/>release notes]
+    CHECK -->|No| DOWNLOAD[Download from<br/>marketing site]
+    DOWNLOAD --> SUCCESS{Download<br/>succeeded?}
+    SUCCESS -->|Yes| CACHE[Cache to<br/>release-notes/]
+    SUCCESS -->|No| EMPTY[Create empty<br/>placeholder]
+    CACHE --> BUILD[Continue build]
+    EMPTY --> BUILD
+    REUSE --> BUILD
+    BUILD --> END[Build succeeds]
+
+    style SUCCESS fill:#ffffcc
+    style END fill:#ccffcc
+```
+
+- Step A: Check if release_notes_<hash>.txt exists in the Persistent Cache.
+- Step B (Cache Hit): Use the cached file. This ensures the build is reproducible (even if the website changed, we use the version from the first build)
+- Step C (Cache Miss): Try to curl the website.
+- Step D (Robustness Fallback): If the website is down and the cache is empty, the script looks for the latest available note in the cache to avoid a build failure.
 
 ## How Reproducibility Works
 
@@ -71,7 +81,5 @@ Check `pom.xml` for the `project.build.outputTimestamp` setting and `scripts/cre
 ## Troubleshooting
 
 **Different checksums?** Make sure you're using the same commit hash and the same cached release notes file exists.
-
-**Can't download release notes?** That's okay - the script creates an empty placeholder so the build continues.
 
 **Docker not found in TeamCity?** The agent needs Docker access. Check that `/var/run/docker.sock` is mounted in `docker-compose.yml`.

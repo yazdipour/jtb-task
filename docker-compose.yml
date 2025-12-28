@@ -37,6 +37,19 @@ services:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # Test service for workflow validation
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: jtb-test
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: bash test.sh
+    profiles:
+      - test
+
 volumes:
   teamcity-server-data:
   teamcity-agent-conf:
