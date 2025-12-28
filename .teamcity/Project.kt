@@ -51,13 +51,8 @@ object ReproducibleDocsProject : Project({
 object DocsVcsRoot : GitVcsRoot({
     id("DocsRepository")
     name = "Documentation Repository"
-    
-    // TODO: Replace with your actual repository URL
     url = "https://github.com/yazdipour/jtb-task.git"
-    
-    // Default branch
     branch = "refs/heads/master"
-    
     // Branch specification for builds
     branchSpec = """
         +:refs/heads/*

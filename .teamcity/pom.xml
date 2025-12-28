@@ -10,7 +10,6 @@
 
     <properties>
         <kotlin.version>1.9.22</kotlin.version>
-        <teamcity.dsl.version>2025.11</teamcity.dsl.version>
     </properties>
 
     <repositories>

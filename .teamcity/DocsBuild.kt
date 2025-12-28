@@ -8,6 +8,7 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildSteps.dockerCommand
+import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
@@ -128,23 +129,11 @@ object DocsBuild : BuildType({
         }
 
         // Step 3: Run Javadoc generation in Docker container
-        script {
+        maven {
             id = "RUN_JAVADOC_BUILD"
-            name = "Generate Javadoc in Docker"
-            scriptContent = """
-                #!/bin/bash
-                set -euo pipefail
-                
-                echo "=============================================="
-                echo "Step 3: Generating Javadoc"
-                echo "=============================================="
-                
-                # Run Maven javadoc generation
-                /usr/bin/mvn clean javadoc:javadoc -B -q
-                
-                echo ""
-                echo "Javadoc generation completed"
-            """.trimIndent()
+            name = "Generate Javadoc"
+            goals = "clean javadoc:javadoc"
+            runnerArgs = "-B -q"
         }
 
         // Step 4: Create reproducible archive
