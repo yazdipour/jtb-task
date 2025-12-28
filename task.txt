@@ -1,0 +1,17 @@
+Problem
+To build and release a documentation archive, a developer generates a Maven project's
+Javadoc, downloads the latest release notes from a marketing team's website, creates an
+archive and submits it to QA, everything from a local machine. Such a build procedure is
+tedious, unreliable and not secure. We definitely can do better.
+Goal
+Let's automate the release procedure with TeamCity and make a distribution archive
+byte-to-byte reproducible. The only required input for a TeamCity build should be a commit hash
+of the project's Git repository. Build should not fail if the marketing website isn't available.
+Details
+It's assumed that the marketing team's processes cannot be changed;
+Release notes may be modified by the marketing team anytime;
+What Maven project and Git hosting to use are up to you;
+TeamCity build settings should be stored in Kotlin format;
+A deployment should be described in code, both Docker Compose and Kubernetes are
+acceptable options;
+More about build reproducibility can be found here https://reproducible-builds.org/.

@@ -98,6 +98,8 @@ object DocsBuild : BuildType({
                 echo "=============================================="
                 echo "Commit Hash: %commit.hash%"
                 echo "Marketing URL: ${'$'}MARKETING_URL"
+                export RELEASE_NOTES_CACHE_DIR="${'$'}HOME/.cache/jtb-task/release-notes"
+                echo "Release notes cache dir: ${'$'}RELEASE_NOTES_CACHE_DIR"
                 echo ""
                 
                 # Make script executable
