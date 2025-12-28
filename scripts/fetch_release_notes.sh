@@ -5,7 +5,7 @@
 set -euo pipefail
 
 COMMIT_HASH="${1:-unknown}"
-MARKETING_URL="${MARKETING_URL:-https://example.com}"
+MARKETING_URL="${MARKETING_URL}"
 CACHE_FILE="release-notes/${COMMIT_HASH}.txt"
 
 mkdir -p release-notes
