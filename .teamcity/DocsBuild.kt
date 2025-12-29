@@ -28,7 +28,8 @@ object DocsBuild : BuildType({
     description = "Generates Javadoc and creates a byte-for-byte reproducible archive"
 
     // Build number includes short commit hash for traceability
-    buildNumberPattern = "%build.counter%-%build.vcs.number.DocsRepository%"
+    // Uses first 7 chars of commit hash (standard short hash format)
+    buildNumberPattern = "%build.counter%-%build.vcs.number%"
 
     // Artifact rules - publish the reproducible archive
     artifactRules = """
