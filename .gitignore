@@ -81,3 +81,4 @@ logs/
 release-notes/
 docs.tar.gz
 .archive-staging/
+teamcity-work/
