@@ -27,6 +27,9 @@ object DocsBuild : BuildType({
     name = "Build Documentation"
     description = "Generates Javadoc and creates a byte-for-byte reproducible archive"
 
+    // Build number includes short commit hash for traceability
+    buildNumberPattern = "%build.counter%-%build.vcs.number.DocsRepository%"
+
     // Artifact rules - publish the reproducible archive
     artifactRules = """
         docs.tar.gz => .
@@ -38,24 +41,31 @@ object DocsBuild : BuildType({
     }
 
     params {
-        // Commit hash from VCS
+        // Commit hash from VCS (full hash for scripts)
         param("commit.hash", "%build.vcs.number%")
         
-        // Timeout for external requests (seconds)
-        param("fetch.timeout", "10")
+        // Commit timestamp - will be set by first build step
+        param("commit.timestamp", "")
 
         // Docker image tag (unique per build to avoid collisions)
-        param("docker.image.tag", "docs-builder:%build.number%")
+        param("docker.image.tag", "docs-builder:%build.counter%")
     }
 
     steps {
-        // Step 1: Build Docker image for consistent build environment
+        // Step 1: Build Docker image and extract commit metadata
         script {
             id = "BUILD_ENV"
             name = "Prepare Build Environment"
             scriptContent = """
                 #!/bin/bash
                 set -euo pipefail
+                
+                # Extract commit timestamp for reproducible builds
+                COMMIT_TS=$(git log -1 --format='%ci' HEAD | cut -d' ' -f1,2)
+                echo "Commit timestamp: ${'$'}COMMIT_TS"
+                
+                # Export for subsequent steps via TeamCity service message
+                echo "##teamcity[setParameter name='commit.timestamp' value='${'$'}COMMIT_TS']"
                 
                 echo "Building Docker image: %docker.image.tag%"
                 docker build --pull -t "%docker.image.tag%" -f Dockerfile .
@@ -109,7 +119,7 @@ object DocsBuild : BuildType({
             """.trimIndent()
         }
 
-        // Step 4: Create reproducible archive
+        // Step 4: Create reproducible archive using commit timestamp
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
@@ -118,6 +128,7 @@ object DocsBuild : BuildType({
                 set -euo pipefail
                 
                 echo "Creating archive for commit %commit.hash%"
+                echo "Using timestamp: %commit.timestamp%"
                 
                 # Use same persistent cache directory
                 CACHE_DIR="/opt/buildagent/cache/release-notes"
@@ -128,7 +139,7 @@ object DocsBuild : BuildType({
                     -w /workspace \
                     -e RELEASE_NOTES_CACHE_DIR=/cache \
                     "%docker.image.tag%" \
-                    bash -c "chmod +x scripts/create_archive.sh && ./scripts/create_archive.sh '%commit.hash%'"
+                    bash -c "chmod +x scripts/create_archive.sh && ./scripts/create_archive.sh '%commit.hash%' '%commit.timestamp%'"
                 
                 # Verify
                 if [ -f "docs.tar.gz" ]; then
