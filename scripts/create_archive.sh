@@ -16,10 +16,12 @@
 set -euo pipefail
 
 # Constants
-readonly SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly FIXED_TIMESTAMP="198001010000"
 readonly FIXED_MTIME="1980-01-01 00:00:00"
 readonly ARCHIVE_NAME="docs.tar.gz"
+SCRIPT_NAME=""
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
 
 # Defaults
 readonly DEFAULT_JAVADOC_DIR="target/reports/apidocs"

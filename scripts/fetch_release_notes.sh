@@ -13,9 +13,11 @@
 set -euo pipefail
 
 # Constants
-readonly SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 readonly CURL_TIMEOUT=10
 readonly CURL_MAX_RETRIES=3
+SCRIPT_NAME=""
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
 
 # Show usage information
 usage() {
@@ -161,6 +163,7 @@ main() {
     TMP_FILE="$(mktemp)"
     
     # Cleanup function for temporary files
+    # shellcheck disable=SC2317
     cleanup() {
         rm -f "${TMP_FILE}" 2>/dev/null || true
     }
