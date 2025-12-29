@@ -4,9 +4,9 @@
  * Defines the main project structure for the Reproducible Documentation Build.
  */
 
+package _Self
+
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.vcs
 import jetbrains.buildServer.configs.kotlin.vcs.GitVcsRoot
 
 /**
@@ -31,12 +31,31 @@ object ReproducibleDocsProject : Project({
     params {
         // Marketing website URL (can be overridden per build)
         param("env.MARKETING_URL", "https://example.com")
+        text("env.MARKETING_URL", "https://example.com", 
+             label = "Marketing Website URL",
+             description = "URL to fetch release notes from. The build will gracefully handle failures.",
+             allowEmpty = false)
         
         // Fixed timestamp for reproducibility
         param("env.BUILD_TIMESTAMP", "1980-01-01T00:00:00Z")
         
         // Docker image tag
         param("docker.image.tag", "docs-builder:latest")
+        
+        // Release notes cache directory (relative to agent home)
+        param("env.RELEASE_NOTES_CACHE_DIR", "%teamcity.agent.home.dir%/.cache/jtb-task/release-notes")
+    }
+    
+    // Cleanup settings to prevent disk space issues
+    cleanup {
+        // Keep artifacts for 30 days
+        artifacts(days = 30)
+        
+        // Keep build history for 90 days
+        history(days = 90)
+        
+        // Prevent accidental deletion of builds with specific tags
+        preventDependencyCleanup = true
     }
 })
 

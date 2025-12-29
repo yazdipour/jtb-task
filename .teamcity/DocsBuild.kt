@@ -5,12 +5,16 @@
  * byte-for-byte reproducible archive.
  */
 
+package _Self
+
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildSteps.dockerCommand
 import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
+import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
+import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
 /**
  * Build configuration for generating reproducible documentation archives.
@@ -49,6 +53,18 @@ object DocsBuild : BuildType({
         
         // Timeout for external requests (seconds)
         param("fetch.timeout", "10")
+    }
+    
+    // Build agent requirements
+    requirements {
+        // Require Docker to be available on the agent
+        exists("docker.server.version")
+        
+        // Require specific tools
+        exists("maven")
+        
+        // Minimum disk space (in GB)
+        moreThanOrEqual("teamcity.agent.hardware.diskSpace.available", "5")
     }
 
     // Build steps
@@ -192,6 +208,25 @@ object DocsBuild : BuildType({
         // Enable Docker support for the build
         dockerSupport {
             id = "DOCKER_SUPPORT"
+            cleanupPushedImages = true
+        }
+    }
+    
+    // Build failure conditions
+    failureConditions {
+        // Fail if the build takes too long (30 minutes)
+        executionTimeoutMin = 30
+        
+        // Fail on specific error messages in build log
+        errorMessage = true
+        
+        // Fail if no tests are run (if tests exist)
+        failOnMetricChange {
+            metric = BuildFailureOnMetric.MetricType.ARTIFACT_SIZE
+            threshold = 0
+            units = BuildFailureOnMetric.MetricUnit.DEFAULT_UNIT
+            comparison = BuildFailureOnMetric.MetricComparison.LESS
+            compareTo = value()
         }
     }
 })
