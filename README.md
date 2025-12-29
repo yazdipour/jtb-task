@@ -1,112 +1,88 @@
-# Jetbrains Task - Build and Release Documentation
+# Reproducible TeamCity Build
 
-Automate a manual process of building and releasing documentation.
+A demo project showing how to create reproducible documentation builds in TeamCity.
 
-<details>
-<summary>Task description</summary>
+## What It Does
 
-### Manual process
+This project generates Javadoc and packages it into a reproducible archive (`docs.tar.gz`) that produces the same checksum every time, regardless of when or where you build it.
 
-- Runs mvn javadoc to generate documentation
-- Downloads release notes from a marketing website.
-- Archives everything.
-- Submits the archive to QA.
+The build also fetches release notes from an external website, but caches them by commit hash so builds remain reproducible even if the website changes or goes down.
 
-### Assignment: Automated process
+## Quick Start
 
-- Automate the manual process using TeamCity.
-- TeamCity only gets a commit hash as a parameter.
-  - Build must be reproducible: same commit hash should produce identical archive.
-  - Do not fail the build if the marketing website is unavailable.
-  - Use Kotlin DSL for TeamCity configuration.
-- Provide a README with instructions on how to run TeamCity and verify the build.
+**Build locally:**
+```bash
+# Generate Javadoc
+mvn clean javadoc:javadoc
 
-</details>
+# Fetch release notes (set MARKETING_URL to your release notes URL)
+MARKETING_URL=https://example.com/releases.txt ./scripts/fetch_release_notes.sh abc123
 
-## Solution
+# Create archive
+./scripts/create_archive.sh abc123
 
-- Release notes are downloaded **once per commit**
-- Stored as TeamCity artifacts and Reused for future builds.
-- This means your script cannot use git pull inside the build steps (as the agent already has the code). It must use the hash provided by TeamCity to verify it is working on the correct state.
-- Persistent Cache (Volume): This is the key to the assignment. It stores a "pinned" copy of the release notes for every commit hash. Once a build for a specific hash is successful, the release notes for that version are "frozen" here forever.
+# Verify checksum
+sha256sum docs.tar.gz
+```
 
-### Hidden Factors in Reproducibility
-- Timestamps: By default, Javadoc puts "Generated on Dec 20, 2025" in every HTML file.
-  - SOURCE_DATE_EPOCH: This forces Maven and the ZIP utility to use the Git commit time instead of "Current Time."
-- ZIP Metadata: ZIP files store the time the file was created. If you zip at 2:00 PM and again at 2:01 PM, the hashes won't match.
-- File Ordering: Linux might list files in a different order on different machines. If the zip utility adds files in a different order, the hash changes.
-- The Website: Since the website can change "anytime," you need a way to "pin" the version of the notes used for a specific build.
+**Run with TeamCity:**
+```bash
+docker-compose up -d
+# Open http://localhost:8111 and follow setup wizard
 
-### Strategy
+# To run the test
+docker compose --profile test run --rm test
+```
 
-- Step A: Check if release_notes_<hash>.html exists in the Persistent Cache.
+## Strategy
+
+```mermaid
+flowchart LR
+    START[Start] --> CHECK{Cached file<br/>exists?}
+    CHECK -->|Yes| REUSE[Reuse cached<br/>release notes]
+    CHECK -->|No| DOWNLOAD[Download from<br/>marketing site]
+    DOWNLOAD --> SUCCESS{Download<br/>succeeded?}
+    SUCCESS -->|Yes| CACHE[Cache to<br/>release-notes/]
+    SUCCESS -->|No| EMPTY[Create empty<br/>placeholder]
+    CACHE --> BUILD[Continue build]
+    EMPTY --> BUILD
+    REUSE --> BUILD
+    BUILD --> END[Build succeeds]
+
+    style SUCCESS fill:#ffffcc
+    style END fill:#ccffcc
+```
+
+- Step A: Check if release_notes_<hash>.txt exists in the Persistent Cache.
 - Step B (Cache Hit): Use the cached file. This ensures the build is reproducible (even if the website changed, we use the version from the first build)
 - Step C (Cache Miss): Try to curl the website.
 - Step D (Robustness Fallback): If the website is down and the cache is empty, the script looks for the latest available note in the cache to avoid a build failure.
 
-### How to Run
+## How Reproducibility Works
 
-1. Start TeamCity:
+The build produces identical outputs by:
+- Using fixed timestamps (1980-01-01) for all files
+- Sorting files alphabetically in the archive
+- Running in Docker with fixed Maven/JDK versions
+- Caching external content (release notes) by commit hash
 
-```bash
-docker-compose up -d
+Check `pom.xml` for the `project.build.outputTimestamp` setting and `scripts/create_archive.sh` for tar flags.
+
+## Project Structure
+
+```
+├── .teamcity/              # TeamCity Kotlin DSL config
+├── Dockerfile              # Build environment
+├── docker-compose.yml      # TeamCity setup
+├── pom.xml                 # Maven config
+├── src/main/java/          # Sample Java code
+└── scripts/
+    ├── fetch_release_notes.sh
+    └── create_archive.sh
 ```
 
-2. Open TeamCity UI at `http://localhost:8111`
-3. Trigger build with a commit hash
-4. Download `docs.tar.gz`
-5. Verify:
+## Troubleshooting
 
-```bash
-sha256sum docs.tar.gz # Should be identical for same commit
-```
+**Different checksums?** Make sure you're using the same commit hash and the same cached release notes file exists.
 
-## Diagram
-
-```mermaid
----
-config:
-  layout: elk
----
-flowchart TB
- subgraph s1["External World (Unreliable)"]
-        MarketingSite[("🌐 Marketing Website")]
-        QA_Team["👥 QA Team"]
-  end
- subgraph s2["Source of Truth (Reliable)"]
-        GitRepo[🐙 Git Repository]
- end
- subgraph s3["Dockerized Build Environment"]
-        TCAgent["👷‍♂️ TeamCity Agent"]
-        Maven["☕ Maven"]
-        Scripts["📜 Build Scripts"]
-  end
- subgraph s4["CI Infrastructure (TeamCity)"]
-        TCServer["🧠 TeamCity Server"]
-        s3
-        CacheVolume[("💾 Persistent Cache Volume")]
-  end
-    GitRepo -- Trigger on push --> TCServer
-    TCServer -- "1. Assign Build(Input: Commit Hash X)" --> TCAgent
-    TCAgent -- "2. Checkout Code(At Hash X)" --> GitRepo
-    TCAgent -- "3a. Check for existing notes" --> CacheVolume
-    CacheVolume -- "3b. Return notes OR miss" --> TCAgent
-    TCAgent -. "3c. Try fetch (If cache miss)" .-> MarketingSite
-    TCAgent -- "4. Pin notes for Hash X" --> CacheVolume
-    TCAgent -- "5. Run Build & Normalize" --> Maven
-    Maven --> Scripts
-    Scripts -- "6. Publish reproducible ZIP" --> TCServer
-    TCServer -- "7. Download Artifact" --> QA_Team
-
-     MarketingSite:::external
-     QA_Team:::external
-     GitRepo:::source
-     TCAgent:::ci
-     Maven:::ci
-     Scripts:::ci
-     TCServer:::ci
-     CacheVolume:::storage
-    classDef external fill:#f9f,stroke:#333,stroke-width:2px
-    classDef source fill:#ccf,stroke:#333,stroke-width:2px
-    classDef ci fill:#dfd,stroke:#333,stroke-width:2px
-```
+**Docker not found in TeamCity?** The agent needs Docker access. Check that `/var/run/docker.sock` is mounted in `docker-compose.yml`.
