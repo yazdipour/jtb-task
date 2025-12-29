@@ -62,7 +62,15 @@ object DocsBuild : BuildType({
                 set -euo pipefail
                 
                 # Extract commit timestamp for reproducible builds
-                COMMIT_TS=$(git log -1 --format='%ci' HEAD | cut -d' ' -f1,2)
+                # Format: YYYY-MM-DD HH:MM:SS (normalized, no timezone)
+                COMMIT_TS=$(git log -1 --format='%ci' HEAD 2>/dev/null | cut -d' ' -f1,2 || echo "")
+                
+                # Validate we got a proper timestamp, fallback to epoch if git fails
+                if [[ ! "${'$'}COMMIT_TS" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
+                    echo "Warning: Could not extract commit timestamp, using fallback"
+                    COMMIT_TS="1980-01-01 00:00:00"
+                fi
+                
                 echo "Commit timestamp: ${'$'}COMMIT_TS"
                 
                 # Export for subsequent steps via TeamCity service message
