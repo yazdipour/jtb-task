@@ -108,10 +108,13 @@ find_latest_cache() {
     local latest_cache=""
     
     # Get list of cache files sorted by modification time (newest first)
+    # Using find with -printf for reliable sorting
     local candidates=()
-    while IFS= read -r -d $'\0' file; do
+    while IFS= read -r -d '' file; do
         candidates+=("${file}")
-    done < <(find "${cache_dir}" -maxdepth 1 -type f -name "*.txt" -print0 2>/dev/null | xargs -0 ls -1t 2>/dev/null || true)
+    done < <(find "${cache_dir}" -maxdepth 1 -type f -name "*.txt" -printf '%T@ %p\0' 2>/dev/null | \
+             sort -zrn | \
+             cut -z -d' ' -f2-)
     
     # Find first non-placeholder cache entry
     for candidate in "${candidates[@]}"; do

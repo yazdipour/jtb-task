@@ -54,14 +54,28 @@ check_shellcheck() {
     fi
     
     local failed=0
-    for script in scripts/*.sh test.sh; do
-        if [[ -f "${script}" ]]; then
-            if shellcheck "${script}"; then
-                print_status "PASS" "${script}"
-            else
-                print_status "FAIL" "${script}"
-                failed=1
-            fi
+    local scripts=()
+    
+    # Collect all bash scripts
+    while IFS= read -r -d '' script; do
+        scripts+=("${script}")
+    done < <(find scripts -maxdepth 1 -type f -name "*.sh" -print0 2>/dev/null)
+    
+    if [[ -f "test.sh" ]]; then
+        scripts+=("test.sh")
+    fi
+    
+    if [[ ${#scripts[@]} -eq 0 ]]; then
+        print_status "SKIP" "No bash scripts found"
+        return 0
+    fi
+    
+    for script in "${scripts[@]}"; do
+        if shellcheck "${script}"; then
+            print_status "PASS" "${script}"
+        else
+            print_status "FAIL" "${script}"
+            failed=1
         fi
     done
     
@@ -76,14 +90,28 @@ check_script_permissions() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     local failed=0
-    for script in scripts/*.sh test.sh; do
-        if [[ -f "${script}" ]]; then
-            if [[ -x "${script}" ]]; then
-                print_status "PASS" "${script} is executable"
-            else
-                print_status "FAIL" "${script} is not executable"
-                failed=1
-            fi
+    local scripts=()
+    
+    # Collect all bash scripts
+    while IFS= read -r -d '' script; do
+        scripts+=("${script}")
+    done < <(find scripts -maxdepth 1 -type f -name "*.sh" -print0 2>/dev/null)
+    
+    if [[ -f "test.sh" ]]; then
+        scripts+=("test.sh")
+    fi
+    
+    if [[ ${#scripts[@]} -eq 0 ]]; then
+        print_status "SKIP" "No bash scripts found"
+        return 0
+    fi
+    
+    for script in "${scripts[@]}"; do
+        if [[ -x "${script}" ]]; then
+            print_status "PASS" "${script} is executable"
+        else
+            print_status "FAIL" "${script} is not executable"
+            failed=1
         fi
     done
     
@@ -98,16 +126,25 @@ check_teamcity_dsl() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     local failed=0
+    local kt_files=()
+    
+    # Collect all Kotlin files
+    while IFS= read -r -d '' kt_file; do
+        kt_files+=("${kt_file}")
+    done < <(find .teamcity -maxdepth 1 -type f \( -name "*.kt" -o -name "*.kts" \) -print0 2>/dev/null)
+    
+    if [[ ${#kt_files[@]} -eq 0 ]]; then
+        print_status "FAIL" "No TeamCity Kotlin files found"
+        return 1
+    fi
     
     # Check for package declarations
-    for kt_file in .teamcity/*.kt .teamcity/*.kts; do
-        if [[ -f "${kt_file}" ]]; then
-            if grep -q "^package _Self" "${kt_file}" || grep -q "^import" "${kt_file}"; then
-                print_status "PASS" "${kt_file} has proper structure"
-            else
-                print_status "FAIL" "${kt_file} missing package/import declarations"
-                failed=1
-            fi
+    for kt_file in "${kt_files[@]}"; do
+        if grep -q "^package _Self" "${kt_file}" || grep -q "^import" "${kt_file}"; then
+            print_status "PASS" "${kt_file} has proper structure"
+        else
+            print_status "FAIL" "${kt_file} missing package/import declarations"
+            failed=1
         fi
     done
     
