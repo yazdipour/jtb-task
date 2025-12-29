@@ -25,16 +25,10 @@ object ReproducibleDocsProject : Project({
     // Build configurations
     buildType(DocsBuild)
 
-    // Project parameters
+    // Project parameters (can be overridden per build)
     params {
-        // Marketing website URL (can be overridden per build)
-        param("env.MARKETING_URL", "https://example.com")
-        
-        // Fixed timestamp for reproducibility
-        param("env.BUILD_TIMESTAMP", "1980-01-01T00:00:00Z")
-        
-        // Docker image tag
-        param("docker.image.tag", "docs-builder:latest")
+        // Marketing website URL for release notes
+        param("env.MARKETING_URL", "https://example.com/release-notes.txt")
     }
 })
 
