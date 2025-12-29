@@ -36,21 +36,30 @@ object DocsBuild : BuildType({
         docs.tar.gz => .
     """.trimIndent()
 
-    // VCS settings
     vcs {
         root(DocsVcsRoot)
-        
+
         // Clean checkout ensures reproducibility
         cleanCheckout = true
     }
 
-    // Build parameters
     params {
         // Commit hash from VCS (automatically populated by TeamCity)
         param("commit.hash", "%build.vcs.number%")
         
         // Timeout for external requests (seconds)
         param("fetch.timeout", "10")
+    }
+    
+    requirements {
+        // Require Docker to be available on the agent
+        exists("docker.server.version")
+
+        // Require specific tools
+        exists("maven")
+
+        // Minimum disk space (in GB)
+        moreThanOrEqual("teamcity.agent.hardware.diskSpace.available", "5")
     }
 
     // Build steps
@@ -194,6 +203,25 @@ object DocsBuild : BuildType({
         // Enable Docker support for the build
         dockerSupport {
             id = "DOCKER_SUPPORT"
+            cleanupPushedImages = true
+        }
+    }
+
+    // Build failure conditions
+    failureConditions {
+        // Fail if the build takes too long (30 minutes)
+        executionTimeoutMin = 30
+
+        // Fail on specific error messages in build log
+        errorMessage = true
+
+        // Fail if no tests are run (if tests exist)
+        failOnMetricChange {
+            metric = BuildFailureOnMetric.MetricType.ARTIFACT_SIZE
+            threshold = 0
+            units = BuildFailureOnMetric.MetricUnit.DEFAULT_UNIT
+            comparison = BuildFailureOnMetric.MetricComparison.LESS
+            compareTo = value()
         }
     }
 })
