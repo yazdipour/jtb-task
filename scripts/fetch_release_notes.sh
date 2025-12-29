@@ -37,7 +37,11 @@ echo "WARNING: Download failed"
 # On failure, use the most recent *successful* cache as fallback.
 # (Exclude placeholder files to avoid copying a previous failure forward.)
 LATEST_CACHE=""
-mapfile -t CANDIDATES < <(ls -1t "${CACHE_DIR}"/*.txt 2>/dev/null || true)
+CANDIDATES=()
+while IFS= read -r -d '' file; do
+    CANDIDATES+=("${file}")
+done < <(find "${CACHE_DIR}" -maxdepth 1 -type f -name "*.txt" -print0 2>/dev/null | sort -zr)
+
 for candidate in "${CANDIDATES[@]}"; do
     if [ "${candidate}" = "${CACHE_FILE}" ]; then
         continue

@@ -15,8 +15,10 @@ The build also fetches release notes from an external website, but caches them b
 # Generate Javadoc
 mvn clean javadoc:javadoc
 
-# Create archive (replace 'abc123' with actual commit hash)
-./scripts/fetch_release_notes.sh abc123
+# Fetch release notes (set MARKETING_URL to your release notes URL)
+MARKETING_URL=https://example.com/releases.txt ./scripts/fetch_release_notes.sh abc123
+
+# Create archive
 ./scripts/create_archive.sh abc123
 
 # Verify checksum
@@ -69,6 +71,7 @@ Check `pom.xml` for the `project.build.outputTimestamp` setting and `scripts/cre
 ## Project Structure
 
 ```
+├── .teamcity/              # TeamCity Kotlin DSL config
 ├── Dockerfile              # Build environment
 ├── docker-compose.yml      # TeamCity setup
 ├── pom.xml                 # Maven config

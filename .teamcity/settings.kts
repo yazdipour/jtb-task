@@ -8,6 +8,8 @@
  * https://www.jetbrains.com/help/teamcity/kotlin-dsl.html
  */
 
+package _Self
+
 import jetbrains.buildServer.configs.kotlin.*
 
 version = "2025.11"

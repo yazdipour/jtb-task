@@ -4,9 +4,9 @@
  * Defines the main project structure for the Reproducible Documentation Build.
  */
 
+package _Self
+
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.vcs
 import jetbrains.buildServer.configs.kotlin.vcs.GitVcsRoot
 
 /**

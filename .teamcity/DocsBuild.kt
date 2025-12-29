@@ -5,6 +5,8 @@
  * byte-for-byte reproducible archive.
  */
 
+package _Self
+
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildSteps.dockerCommand
