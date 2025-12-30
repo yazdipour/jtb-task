@@ -3,9 +3,13 @@
  */
 
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
+
+private const val DOCKER_IMAGE = "alpine:3.19"
+private const val CACHE_MOUNT = "-v /opt/buildagent/cache/release-notes:/cache -e RELEASE_NOTES_CACHE_DIR=/cache"
 
 /**
  * Build configuration for generating reproducible documentation archives.
@@ -29,14 +33,16 @@ object DocsBuild : BuildType({
     params {
         param("commit.hash", "%build.vcs.number%")
         param("build.timestamp", "")
-        param("env.TEAMCITY_BUILD_CHECKOUTDIR", "%teamcity.build.checkoutDir%")
     }
 
     steps {
         script {
             id = "FETCH_NOTES"
             name = "Fetch Release Notes"
-            scriptContent = "bash scripts/run_in_docker.sh bash scripts/fetch_release_notes.sh '%commit.hash%' || true"
+            scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%' || true"
+            dockerImage = DOCKER_IMAGE
+            dockerRunParameters = CACHE_MOUNT
+            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
 
         maven {
@@ -50,7 +56,10 @@ object DocsBuild : BuildType({
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
-            scriptContent = "bash scripts/run_in_docker.sh bash scripts/create_archive.sh '%commit.hash%'"
+            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%'"
+            dockerImage = DOCKER_IMAGE
+            dockerRunParameters = CACHE_MOUNT
+            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
     }
 
