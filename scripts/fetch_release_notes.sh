@@ -8,10 +8,18 @@ CACHE_FILE="$CACHE_DIR/$COMMIT_HASH.txt"
 
 mkdir -p "$CACHE_DIR"
 
-if [ ! -f "$CACHE_FILE" ]; then
-    if ! curl -sSfL -m 10 "$MARKETING_URL" -o "$CACHE_FILE" 2>/dev/null; then
-        FALLBACK=$(find "$CACHE_DIR" -name "*.txt" -type f 2>/dev/null | head -1)
-        [ -n "$FALLBACK" ] && cp "$FALLBACK" "$CACHE_FILE" || touch "$CACHE_FILE"
+if [ -f "$CACHE_FILE" ]; then
+    echo "Using cached: $CACHE_FILE"
+elif curl -sSfL -m 10 "$MARKETING_URL" -o "$CACHE_FILE" 2>/dev/null; then
+    echo "Downloaded from: $MARKETING_URL"
+else
+    FALLBACK=$(find "$CACHE_DIR" -name "*.txt" -type f 2>/dev/null | head -1)
+    if [ -n "$FALLBACK" ]; then
+        cp "$FALLBACK" "$CACHE_FILE"
+        echo "FALLBACK: using $FALLBACK"
+    else
+        touch "$CACHE_FILE"
+        echo "FALLBACK: created empty placeholder"
     fi
 fi
 
