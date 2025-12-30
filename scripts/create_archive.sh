@@ -11,7 +11,7 @@ STAGING_DIR=".archive-staging"
 # Get timestamp from release notes file (the reproducibility anchor)
 if [ -f "$RELEASE_NOTES" ]; then
     TIMESTAMP=$(stat -c '%Y' "$RELEASE_NOTES" 2>/dev/null || stat -f '%m' "$RELEASE_NOTES")
-    MTIME=$(date -d "@$TIMESTAMP" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -r "$TIMESTAMP" '+%Y-%m-%d %H:%M:%S')
+    MTIME=$(date -u -d "@$TIMESTAMP" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || date -u -r "$TIMESTAMP" '+%Y-%m-%d %H:%M:%S')
 else
     MTIME="1980-01-01 00:00:00"
 fi

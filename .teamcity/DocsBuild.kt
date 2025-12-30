@@ -3,7 +3,6 @@
  */
 
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
@@ -37,7 +36,7 @@ object DocsBuild : BuildType({
             id = "JAVADOC"
             name = "Generate Javadoc"
             goals = "clean javadoc:javadoc"
-            runnerArgs = "-B -q"
+            runnerArgs = "-B"
         }
 
         script {
@@ -55,17 +54,10 @@ object DocsBuild : BuildType({
 
     triggers {
         vcs {
-            branchFilter = "+:*"
         }
     }
 
     failureConditions {
-        executionTimeoutMin = 30
-    }
-
-    features {
-        dockerSupport {
-            cleanupPushedImages = true
-        }
+        executionTimeoutMin = 10
     }
 })
