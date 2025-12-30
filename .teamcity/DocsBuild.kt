@@ -22,7 +22,7 @@ object DocsBuild : BuildType({
     artifactRules = "docs.tar.gz"
 
     vcs {
-        root(DocsVcsRoot)
+        root(DslContext.settingsRoot)
         cleanCheckout = true
     }
 
@@ -37,6 +37,7 @@ object DocsBuild : BuildType({
             name = "Generate Javadoc"
             goals = "clean javadoc:javadoc"
             runnerArgs = "-B"
+            dockerImage = "maven:3.9-eclipse-temurin-21"
         }
 
         script {
