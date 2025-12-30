@@ -37,25 +37,25 @@ object DocsBuild : BuildType({
         script {
             id = "COMMIT_INFO"
             name = "Extract Commit Info"
-            scriptContent = "./scripts/prepare_env.sh"
+            scriptContent = "bash scripts/prepare_env.sh"
         }
 
         script {
             id = "JAVADOC"
             name = "Build Image & Generate Javadoc"
-            scriptContent = "./scripts/generate_javadoc.sh '%docker.image.tag%'"
+            scriptContent = "bash scripts/generate_javadoc.sh '%docker.image.tag%'"
         }
 
         script {
             id = "FETCH_NOTES"
             name = "Fetch Release Notes"
-            scriptContent = "./scripts/run_in_docker.sh '%docker.image.tag%' ./scripts/fetch_release_notes.sh '%commit.hash%' || true"
+            scriptContent = "bash scripts/run_in_docker.sh '%docker.image.tag%' bash scripts/fetch_release_notes.sh '%commit.hash%' || true"
         }
 
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
-            scriptContent = "./scripts/run_in_docker.sh '%docker.image.tag%' ./scripts/create_archive.sh '%commit.hash%' '%commit.timestamp%'"
+            scriptContent = "bash scripts/run_in_docker.sh '%docker.image.tag%' bash scripts/create_archive.sh '%commit.hash%' '%commit.timestamp%'"
         }
     }
 
