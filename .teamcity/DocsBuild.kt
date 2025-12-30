@@ -1,40 +1,47 @@
 /*
  * TeamCity Build Configuration for Reproducible Documentation
  * 
- * This build configuration generates Javadoc and packages it into a
- * byte-for-byte reproducible archive.
+ * Generates Javadoc and packages it into a byte-for-byte reproducible archive.
  */
 
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
+import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
+
+/** Persistent cache path on the build agent (survives clean checkouts). */
+private const val CACHE_DIR = "/opt/buildagent/cache/release-notes"
+
+/**
+ * Helper to generate a docker run command with standard workspace/cache mounts.
+ */
+private fun dockerRun(imageTag: String, command: String, withCache: Boolean = false, extraEnv: String = ""): String {
+    val cacheMount = if (withCache) "-v \"$CACHE_DIR:/cache\" -e RELEASE_NOTES_CACHE_DIR=/cache" else ""
+    return """
+        docker run --rm \
+            -v "%teamcity.build.checkoutDir%:/workspace" \
+            $cacheMount \
+            -w /workspace \
+            $extraEnv \
+            "$imageTag" \
+            $command
+    """.trimIndent()
+}
 
 /**
  * Build configuration for generating reproducible documentation archives.
  * 
- * Build Steps:
- * 1. Build Docker image (Toolchain)
- * 2. Fetch release notes (inside Docker)
- * 3. Generate Javadoc (inside Docker)
- * 4. Create reproducible archive (inside Docker)
- * 
- * Artifacts:
- * - docs.tar.gz: Reproducible archive containing Javadoc and release notes
+ * Steps: Build Docker image → Fetch release notes → Generate Javadoc → Create archive
+ * Artifact: docs.tar.gz (reproducible archive with Javadoc and release notes)
  */
 object DocsBuild : BuildType({
     id("DocsBuild")
     name = "Build Documentation"
     description = "Generates Javadoc and creates a byte-for-byte reproducible archive"
 
-    // Build number includes short commit hash for traceability
-    // Uses first 7 chars of commit hash (standard short hash format)
     buildNumberPattern = "%build.counter%-%build.vcs.number%"
-
-    // Artifact rules - publish the reproducible archive
-    artifactRules = """
-        docs.tar.gz => .
-    """.trimIndent()
+    artifactRules = "docs.tar.gz"
 
     vcs {
         root(DocsVcsRoot)
@@ -42,13 +49,8 @@ object DocsBuild : BuildType({
     }
 
     params {
-        // Commit hash from VCS (full hash for scripts)
         param("commit.hash", "%build.vcs.number%")
-        
-        // Commit timestamp - will be set by first build step
         param("commit.timestamp", "")
-
-        // Docker image tag (unique per build to avoid collisions)
         param("docker.image.tag", "docs-builder:%build.counter%")
     }
 
@@ -61,19 +63,15 @@ object DocsBuild : BuildType({
                 #!/bin/bash
                 set -euo pipefail
                 
-                # Extract commit timestamp for reproducible builds
-                # Format: YYYY-MM-DD HH:MM:SS (normalized, no timezone)
-                COMMIT_TS=$(git log -1 --format='%ci' HEAD 2>/dev/null | cut -d' ' -f1,2 || echo "")
+                # Extract commit timestamp (YYYY-MM-DD HH:MM:SS)
+                COMMIT_TS=${'$'}(git log -1 --format='%ci' HEAD 2>/dev/null | cut -d' ' -f1,2 || echo "")
                 
-                # Validate we got a proper timestamp, fallback to epoch if git fails
                 if [[ ! "${'$'}COMMIT_TS" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
                     echo "Warning: Could not extract commit timestamp, using fallback"
                     COMMIT_TS="1980-01-01 00:00:00"
                 fi
                 
                 echo "Commit timestamp: ${'$'}COMMIT_TS"
-                
-                # Export for subsequent steps via TeamCity service message
                 echo "##teamcity[setParameter name='commit.timestamp' value='${'$'}COMMIT_TS']"
                 
                 echo "Building Docker image: %docker.image.tag%"
@@ -90,23 +88,14 @@ object DocsBuild : BuildType({
                 set -euo pipefail
                 
                 echo "Fetching release notes for commit %commit.hash%"
-                echo "Marketing URL: %env.MARKETING_URL%"
+                mkdir -p "$CACHE_DIR"
                 
-                # Create persistent cache directory on the agent (survives clean checkouts)
-                CACHE_DIR="/opt/buildagent/cache/release-notes"
-                mkdir -p "${'$'}CACHE_DIR"
-                
-                # Run fetch script inside Docker container
-                # Mount both workspace and persistent cache
-                docker run --rm \
-                    -v "%teamcity.build.checkoutDir%:/workspace" \
-                    -v "${'$'}CACHE_DIR:/cache" \
-                    -w /workspace \
-                    -e RELEASE_NOTES_CACHE_DIR=/cache \
-                    -e MARKETING_URL="%env.MARKETING_URL%" \
-                    "%docker.image.tag%" \
-                    bash -c "chmod +x scripts/fetch_release_notes.sh && ./scripts/fetch_release_notes.sh '%commit.hash%'" \
-                    || echo "Warning: Release notes fetch failed, continuing with fallback"
+                ${dockerRun(
+                    imageTag = "%docker.image.tag%",
+                    command = """bash -c "chmod +x scripts/fetch_release_notes.sh && ./scripts/fetch_release_notes.sh '%commit.hash%'"""",
+                    withCache = true,
+                    extraEnv = """-e MARKETING_URL="%env.MARKETING_URL%""""
+                )} || echo "Warning: Release notes fetch failed, continuing with fallback"
             """.trimIndent()
         }
 
@@ -119,12 +108,7 @@ object DocsBuild : BuildType({
                 set -euo pipefail
                 
                 echo "Generating Javadoc"
-                
-                docker run --rm \
-                    -v "%teamcity.build.checkoutDir%:/workspace" \
-                    -w /workspace \
-                    "%docker.image.tag%" \
-                    mvn -B -q clean javadoc:javadoc
+                ${dockerRun("%docker.image.tag%", "mvn -B -q clean javadoc:javadoc")}
             """.trimIndent()
         }
 
@@ -136,48 +120,31 @@ object DocsBuild : BuildType({
                 #!/bin/bash
                 set -euo pipefail
                 
-                echo "Creating archive for commit %commit.hash%"
-                echo "Using timestamp: %commit.timestamp%"
+                echo "Creating archive for commit %commit.hash% with timestamp %commit.timestamp%"
                 
-                # Use same persistent cache directory
-                CACHE_DIR="/opt/buildagent/cache/release-notes"
+                ${dockerRun(
+                    imageTag = "%docker.image.tag%",
+                    command = """bash -c "chmod +x scripts/create_archive.sh && ./scripts/create_archive.sh '%commit.hash%' '%commit.timestamp%'"""",
+                    withCache = true
+                )}
                 
-                docker run --rm \
-                    -v "%teamcity.build.checkoutDir%:/workspace" \
-                    -v "${'$'}CACHE_DIR:/cache" \
-                    -w /workspace \
-                    -e RELEASE_NOTES_CACHE_DIR=/cache \
-                    "%docker.image.tag%" \
-                    bash -c "chmod +x scripts/create_archive.sh && ./scripts/create_archive.sh '%commit.hash%' '%commit.timestamp%'"
-                
-                # Verify
-                if [ -f "docs.tar.gz" ]; then
-                    echo "Archive created successfully."
-                    sha256sum docs.tar.gz || md5 docs.tar.gz
-                else
-                    echo "Error: Archive not found!"
-                    exit 1
-                fi
+                [ -f "docs.tar.gz" ] && sha256sum docs.tar.gz || { echo "Error: Archive not found!"; exit 1; }
             """.trimIndent()
         }
     }
 
     triggers {
         vcs {
-            id = "VCS_TRIGGER"
             branchFilter = "+:*"
         }
     }
 
     failureConditions {
         executionTimeoutMin = 30
-        errorMessage = true
     }
 
     features {
         dockerSupport {
-            id = "DockerSupport"
-            // Enables cleanup of Docker images created during the build
             cleanupPushedImages = true
         }
     }
