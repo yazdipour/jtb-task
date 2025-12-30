@@ -4,6 +4,7 @@
 
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
+import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
@@ -28,27 +29,27 @@ object DocsBuild : BuildType({
 
     params {
         param("commit.hash", "%build.vcs.number%")
-        param("docker.image.tag", "docs-builder:%build.counter%")
         param("env.TEAMCITY_BUILD_CHECKOUTDIR", "%teamcity.build.checkoutDir%")
     }
 
     steps {
-        script {
+        maven {
             id = "JAVADOC"
-            name = "Build Image & Generate Javadoc"
-            scriptContent = "bash scripts/generate_javadoc.sh '%docker.image.tag%'"
+            name = "Generate Javadoc"
+            goals = "clean javadoc:javadoc"
+            runnerArgs = "-B -q"
         }
 
         script {
             id = "FETCH_NOTES"
             name = "Fetch Release Notes"
-            scriptContent = "bash scripts/run_in_docker.sh '%docker.image.tag%' bash scripts/fetch_release_notes.sh '%commit.hash%' || true"
+            scriptContent = "bash scripts/run_in_docker.sh bash scripts/fetch_release_notes.sh '%commit.hash%' || true"
         }
 
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
-            scriptContent = "bash scripts/run_in_docker.sh '%docker.image.tag%' bash scripts/create_archive.sh '%commit.hash%'"
+            scriptContent = "bash scripts/run_in_docker.sh bash scripts/create_archive.sh '%commit.hash%'"
         }
     }
 

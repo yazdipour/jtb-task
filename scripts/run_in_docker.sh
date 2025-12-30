@@ -1,9 +1,6 @@
 #!/bin/bash
-# Run command in build container with workspace and cache mounted
+# Run command in Docker with workspace and cache mounted (uses official Maven image)
 set -euo pipefail
-
-IMAGE="$1"
-shift
 
 CACHE_DIR="/opt/buildagent/cache/release-notes"
 mkdir -p "$CACHE_DIR"
@@ -14,4 +11,5 @@ docker run --rm \
     -w /workspace \
     -e RELEASE_NOTES_CACHE_DIR=/cache \
     -e "MARKETING_URL=${MARKETING_URL:-}" \
-    "$IMAGE" "$@"
+    maven:3.9-eclipse-temurin-21 \
+    "$@"

@@ -24,7 +24,7 @@ fi
 FALLBACK=$(find "$CACHE_DIR" -name "*.txt" -type f 2>/dev/null | head -1)
 if [ -n "$FALLBACK" ]; then
     cp "$FALLBACK" "$CACHE_FILE"
-    echo "Using fallback: $FALLBACK"
+    echo "[WARNING] Using fallback: $FALLBACK"
 else
     touch "$CACHE_FILE"
     echo "Created empty placeholder"
