@@ -28,22 +28,23 @@ object DocsBuild : BuildType({
 
     params {
         param("commit.hash", "%build.vcs.number%")
+        param("build.timestamp", "")
         param("env.TEAMCITY_BUILD_CHECKOUTDIR", "%teamcity.build.checkoutDir%")
     }
 
     steps {
-        maven {
-            id = "JAVADOC"
-            name = "Generate Javadoc"
-            goals = "clean javadoc:javadoc"
-            runnerArgs = "-B"
-            dockerImage = "maven:3.9-eclipse-temurin-21"
-        }
-
         script {
             id = "FETCH_NOTES"
             name = "Fetch Release Notes"
             scriptContent = "bash scripts/run_in_docker.sh bash scripts/fetch_release_notes.sh '%commit.hash%' || true"
+        }
+
+        maven {
+            id = "JAVADOC"
+            name = "Generate Javadoc"
+            goals = "clean javadoc:javadoc"
+            runnerArgs = "-B -Dproject.build.outputTimestamp=%build.timestamp%"
+            dockerImage = "maven:3.9-eclipse-temurin-21"
         }
 
         script {
