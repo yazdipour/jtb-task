@@ -1,88 +1,82 @@
-# Reproducible TeamCity Build
+# Reproducible Documentation Build
 
-A demo project showing how to create reproducible documentation builds in TeamCity.
+A TeamCity project that generates Javadoc and packages it into a **byte-for-byte reproducible** archive.
 
 ## What It Does
 
-This project generates Javadoc and packages it into a reproducible archive (`docs.tar.gz`) that produces the same checksum every time, regardless of when or where you build it.
+1. Extracts commit timestamp from git
+2. Fetches release notes from external URL (with caching/fallback)
+3. Generates Javadoc with reproducible timestamps
+4. Creates `docs.tar.gz` archive with identical checksum for same commit
 
-The build also fetches release notes from an external website, but caches them by commit hash so builds remain reproducible even if the website changes or goes down.
+## TeamCity Setup
 
-## Quick Start
+**Required parameter:**
+- `env.MARKETING_URL` - URL to fetch release notes from
 
-**Build locally:**
-```bash
-# Generate Javadoc
-mvn clean javadoc:javadoc
+Configure in Project settings or pass at build time.
 
-# Fetch release notes (set MARKETING_URL to your release notes URL)
-MARKETING_URL=https://example.com/releases.txt ./scripts/fetch_release_notes.sh abc123
+## Build Steps
 
-# Create archive
-./scripts/create_archive.sh abc123
+| Step | Runner | Purpose |
+|------|--------|---------|
+| Get Commit Timestamp | Script | Extract git commit time |
+| Fetch Release Notes | Script (Alpine) | Download/cache release notes |
+| Generate Javadoc | Maven | Build documentation |
+| Create Archive | Script (Alpine) | Package reproducible tar.gz |
 
-# Verify checksum
-sha256sum docs.tar.gz
-```
+## How Reproducibility Works
 
-**Run with TeamCity:**
-```bash
-docker-compose up -d
-# Open http://localhost:8111 and follow setup wizard
+- **Commit timestamp** used for all file mtimes (from `git log --format='%cI'`)
+- **Maven** uses `-Dproject.build.outputTimestamp` for reproducible output
+- **tar** uses `--sort=name --mtime --owner=0 --group=0 --numeric-owner`
+- **Release notes** cached by commit hash (survives external URL changes)
 
-# To run the test
-docker compose --profile test run --rm test
-```
-
-## Strategy
+## Release Notes Caching Strategy
 
 ```mermaid
 flowchart LR
     START[Start] --> CHECK{Cached file<br/>exists?}
-    CHECK -->|Yes| REUSE[Reuse cached<br/>release notes]
-    CHECK -->|No| DOWNLOAD[Download from<br/>marketing site]
+    CHECK -->|Yes| REUSE[Use cached<br/>release notes]
+    CHECK -->|No| DOWNLOAD[Download from<br/>MARKETING_URL]
     DOWNLOAD --> SUCCESS{Download<br/>succeeded?}
     SUCCESS -->|Yes| CACHE[Cache to<br/>release-notes/]
-    SUCCESS -->|No| EMPTY[Create empty<br/>placeholder]
+    SUCCESS -->|No| FALLBACK{Previous<br/>cache exists?}
+    FALLBACK -->|Yes| COPY[Copy previous<br/>cache file]
+    FALLBACK -->|No| EMPTY[Create empty<br/>placeholder]
     CACHE --> BUILD[Continue build]
+    COPY --> BUILD
     EMPTY --> BUILD
     REUSE --> BUILD
-    BUILD --> END[Build succeeds]
 
     style SUCCESS fill:#ffffcc
-    style END fill:#ccffcc
+    style BUILD fill:#ccffcc
 ```
 
-- Step A: Check if release_notes_<hash>.txt exists in the Persistent Cache.
-- Step B (Cache Hit): Use the cached file. This ensures the build is reproducible (even if the website changed, we use the version from the first build)
-- Step C (Cache Miss): Try to curl the website.
-- Step D (Robustness Fallback): If the website is down and the cache is empty, the script looks for the latest available note in the cache to avoid a build failure.
+## Local Testing
 
-## How Reproducibility Works
+```bash
+# Generate Javadoc
+mvn clean javadoc:javadoc
 
-The build produces identical outputs by:
-- Using fixed timestamps (1980-01-01) for all files
-- Sorting files alphabetically in the archive
-- Running in Docker with fixed Maven/JDK versions
-- Caching external content (release notes) by commit hash
+# Fetch release notes
+export MARKETING_URL=https://example.com/releases.txt
+export RELEASE_NOTES_CACHE_DIR=./cache
+./scripts/fetch_release_notes.sh $(git rev-parse HEAD)
 
-Check `pom.xml` for the `project.build.outputTimestamp` setting and `scripts/create_archive.sh` for tar flags.
+# Create archive (needs GNU tar - use Docker on macOS)
+docker run --rm -v "$PWD:/workspace" -w /workspace \
+  -e RELEASE_NOTES_CACHE_DIR=./cache \
+  alpine:3.19 sh -c "apk add tar && sh scripts/create_archive.sh $(git rev-parse HEAD) $(git log -1 --format='%cI')"
 
-## Project Structure
-
-```
-├── .teamcity/              # TeamCity Kotlin DSL config
-├── Dockerfile              # Build environment
-├── docker-compose.yml      # TeamCity setup
-├── pom.xml                 # Maven config
-├── src/main/java/          # Sample Java code
-└── scripts/
-    ├── fetch_release_notes.sh
-    └── create_archive.sh
+# Verify
+sha256sum docs.tar.gz
 ```
 
-## Troubleshooting
+## Fallback Behavior
 
-**Different checksums?** Make sure you're using the same commit hash and the same cached release notes file exists.
+If `MARKETING_URL` download fails:
+1. Use most recent cached release notes file
+2. Or create empty placeholder
 
-**Docker not found in TeamCity?** The agent needs Docker access. Check that `/var/run/docker.sock` is mounted in `docker-compose.yml`.
+Build continues either way - release notes are supplementary content.

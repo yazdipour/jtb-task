@@ -40,6 +40,7 @@ object DocsBuild : BuildType({
             id = "COMMIT_TS"
             name = "Get Commit Timestamp"
             scriptContent = """
+                [ -z "%env.MARKETING_URL%" ] && echo "Error: env.MARKETING_URL is required" && exit 1
                 TS=$(git log -1 --format='%cI' HEAD)
                 echo "##teamcity[setParameter name='build.timestamp' value='${'$'}TS']"
             """.trimIndent()
@@ -50,7 +51,7 @@ object DocsBuild : BuildType({
             name = "Fetch Release Notes"
             scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%' || true"
             dockerImage = DOCKER_IMAGE
-            dockerRunParameters = CACHE_MOUNT
+            dockerRunParameters = "$CACHE_MOUNT -e MARKETING_URL=%env.MARKETING_URL%"
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
 
