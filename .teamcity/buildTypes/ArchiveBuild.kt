@@ -27,7 +27,7 @@ object ArchiveBuild : BuildType({
     }
 
     dependencies {
-        dependency(FetchReleaseNotes) {
+        dependency(ReleaseNoteBuild) {
             snapshot {
                 onDependencyFailure = FailureAction.FAIL_TO_START
             }
@@ -40,7 +40,7 @@ object ArchiveBuild : BuildType({
                 onDependencyFailure = FailureAction.FAIL_TO_START
             }
             artifacts {
-                artifactRules = "$JAVADOC_DIR => target/reports/apidocs/"
+                artifactRules = "javadoc/** => $JAVADOC_DIR/"
             }
         }
         snapshot(TestBuild) {

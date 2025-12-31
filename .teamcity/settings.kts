@@ -16,7 +16,7 @@ project {
     description = "Automated documentation pipeline with byte-for-byte reproducible builds"
 
     // Register all build types
-    buildType(FetchReleaseNotes)
+    buildType(ReleaseNoteBuild)
     buildType(DocsBuild)
     buildType(TestBuild)
     buildType(ArchiveBuild)

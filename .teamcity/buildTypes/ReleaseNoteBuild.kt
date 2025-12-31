@@ -8,8 +8,8 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
  * Fetches release notes and publishes as artifact.
  * Runs in parallel with DocsBuild.
  */
-object FetchReleaseNotes : BuildType({
-    id("FetchReleaseNotes")
+object ReleaseNoteBuild : BuildType({
+    id("ReleaseNoteBuild")
     name = "Fetch Release Notes"
     description = "Downloads release notes and caches as artifact"
 

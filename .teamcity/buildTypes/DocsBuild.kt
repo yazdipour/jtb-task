@@ -14,7 +14,7 @@ object DocsBuild : BuildType({
     name = "Generate Javadoc"
     description = "Generates Javadoc documentation"
 
-    artifactRules = "$JAVADOC_DIR => target/reports/"
+    artifactRules = "$JAVADOC_DIR/** => javadoc/"
 
     vcs {
         root(DslContext.settingsRoot)
