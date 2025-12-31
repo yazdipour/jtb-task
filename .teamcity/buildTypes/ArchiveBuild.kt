@@ -40,8 +40,11 @@ object ArchiveBuild : BuildType({
                 onDependencyFailure = FailureAction.FAIL_TO_START
             }
             artifacts {
-                artifactRules = "$JAVADOC_DIR => target/reports/"
+                artifactRules = "$JAVADOC_DIR => target/reports/apidocs/"
             }
+        }
+        snapshot(TestBuild) {
+            onDependencyFailure = FailureAction.FAIL_TO_START
         }
     }
 
@@ -55,7 +58,7 @@ object ArchiveBuild : BuildType({
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
-            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%' '%build.timestamp%' 'release-notes/$RELEASE_NOTES_FILE'"
+            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%' '%build.timestamp%' 'release-notes/$RELEASE_NOTES_FILE' '$JAVADOC_DIR'"
             dockerImage = DOCKER_IMAGE_ALPINE
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }

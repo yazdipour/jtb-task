@@ -5,7 +5,7 @@ set -eu
 COMMIT_HASH="$1"
 TIMESTAMP="$2"
 RELEASE_NOTES_FILE="${3:-release-notes/release-notes.txt}"
-JAVADOC_DIR="target/reports/apidocs"
+JAVADOC_DIR="${4:-target/reports/apidocs/apidocs}"
 STAGING_DIR=".archive-staging"
 
 # Convert ISO 8601 to tar-compatible format

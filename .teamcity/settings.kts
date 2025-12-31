@@ -9,10 +9,8 @@ version = "2025.11"
  *
  * Build chain on VCS trigger:
  *   FetchReleaseNotes ──┐
- *                       ├──> ArchiveBuild
- *   DocsBuild ──────────┘
- *
- *   TestBuild (runs in parallel, independent)
+ *   DocsBuild ──────────┼──> ArchiveBuild
+ *   TestBuild ──────────┘
  */
 project {
     description = "Automated documentation pipeline with byte-for-byte reproducible builds"
@@ -20,17 +18,12 @@ project {
     // Register all build types
     buildType(FetchReleaseNotes)
     buildType(DocsBuild)
-    buildType(ArchiveBuild)
     buildType(TestBuild)
+    buildType(ArchiveBuild)
 
-    // Single VCS trigger on ArchiveBuild triggers the whole chain
-    // (FetchReleaseNotes and DocsBuild run in parallel via snapshot dependencies)
+    // VCS trigger on ArchiveBuild triggers the whole chain
+    // (FetchReleaseNotes, DocsBuild, TestBuild run in parallel via snapshot dependencies)
     ArchiveBuild.triggers {
-        vcs { }
-    }
-
-    // TestBuild runs independently in parallel
-    TestBuild.triggers {
         vcs { }
     }
 }
