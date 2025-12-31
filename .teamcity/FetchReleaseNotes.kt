@@ -12,7 +12,7 @@ object FetchReleaseNotes : BuildType({
     name = "Fetch Release Notes"
     description = "Downloads release notes and caches as artifact"
 
-    artifactRules = "release-notes.txt"
+    artifactRules = RELEASE_NOTES_FILE
 
     vcs {
         root(DslContext.settingsRoot)
@@ -20,6 +20,7 @@ object FetchReleaseNotes : BuildType({
 
     params {
         param("commit.hash", "%build.vcs.number%")
+        param("env.MARKETING_URL", "https://example.XXXXX")
     }
 
     steps {

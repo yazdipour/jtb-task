@@ -17,12 +17,6 @@ object TestBuild : BuildType({
         cleanCheckout = true
     }
 
-    dependencies {
-        snapshot(DocsBuild) {
-            onDependencyFailure = FailureAction.FAIL_TO_START
-        }
-    }
-
     steps {
         script {
             id = "TEST"

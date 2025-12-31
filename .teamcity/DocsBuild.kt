@@ -4,16 +4,15 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.maven
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
- * Builds documentation archive.
- * Depends on FetchReleaseNotes to get consistent release notes across all agents.
+ * Generates Javadoc documentation.
+ * Runs in parallel with FetchReleaseNotes.
  */
 object DocsBuild : BuildType({
     id("DocsBuild")
-    name = "Build Documentation"
-    description = "Generates Javadoc and creates a byte-for-byte reproducible archive"
+    name = "Generate Javadoc"
+    description = "Generates Javadoc documentation"
 
-    buildNumberPattern = "%build.counter%-%build.vcs.number%"
-    artifactRules = "docs.tar.gz"
+    artifactRules = "$JAVADOC_DIR => target/reports/"
 
     vcs {
         root(DslContext.settingsRoot)
@@ -23,17 +22,6 @@ object DocsBuild : BuildType({
     params {
         param("commit.hash", "%build.vcs.number%")
         param("build.timestamp", "")
-    }
-
-    dependencies {
-        dependency(FetchReleaseNotes) {
-            snapshot {
-                onDependencyFailure = FailureAction.FAIL_TO_START
-            }
-            artifacts {
-                artifactRules = "release-notes.txt => release-notes/"
-            }
-        }
     }
 
     steps {
@@ -50,14 +38,10 @@ object DocsBuild : BuildType({
             runnerArgs = "-B -Dproject.build.outputTimestamp=%build.timestamp%"
             dockerImage = DOCKER_IMAGE_MAVEN
         }
+    }
 
-        script {
-            id = "ARCHIVE"
-            name = "Create Reproducible Archive"
-            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%' '%build.timestamp%'"
-            dockerImage = DOCKER_IMAGE_ALPINE
-            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
-        }
+    triggers {
+        vcs { }
     }
 
     failureConditions {
