@@ -30,7 +30,7 @@ object ReleaseNoteBuild : BuildType({
             scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%' '%env.MARKETING_URL%'"
             dockerImage = DOCKER_IMAGE_ALPINE
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
-            dockerRunParameters = "-v /opt/buildagent/cache/release-notes:/cache"
+            dockerRunParameters = "-v /opt/buildagent/cache/release-notes:/cache -e RELEASE_NOTES_CACHE_DIR=/cache"
         }
     }
 
