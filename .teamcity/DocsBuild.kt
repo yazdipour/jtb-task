@@ -9,13 +9,49 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
 private const val DOCKER_IMAGE = "alpine:3.19"
-private const val CACHE_MOUNT = "-v /opt/buildagent/cache/release-notes:/cache -e RELEASE_NOTES_CACHE_DIR=/cache"
 
 /**
- * Build configuration for generating reproducible documentation archives.
- * 
- * Steps: Build Docker image → Fetch release notes → Generate Javadoc → Create archive
- * Artifact: docs.tar.gz (reproducible archive with Javadoc and release notes)
+ * Fetches release notes and publishes as artifact.
+ * Runs once per commit, result is shared with dependent builds.
+ */
+object FetchReleaseNotes : BuildType({
+    id("FetchReleaseNotes")
+    name = "Fetch Release Notes"
+    description = "Downloads release notes and caches as artifact"
+
+    artifactRules = "release-notes.txt"
+
+    vcs {
+        root(DslContext.settingsRoot)
+    }
+
+    params {
+        param("commit.hash", "%build.vcs.number%")
+    }
+
+    steps {
+        script {
+            id = "FETCH"
+            name = "Fetch Release Notes"
+            scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%'"
+            dockerImage = DOCKER_IMAGE
+            dockerRunParameters = "-e MARKETING_URL=%env.MARKETING_URL%"
+            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
+        }
+    }
+
+    triggers {
+        vcs { }
+    }
+
+    failureConditions {
+        executionTimeoutMin = 5
+    }
+})
+
+/**
+ * Builds documentation archive.
+ * Depends on FetchReleaseNotes to get consistent release notes across all agents.
  */
 object DocsBuild : BuildType({
     id("DocsBuild")
@@ -35,23 +71,22 @@ object DocsBuild : BuildType({
         param("build.timestamp", "")
     }
 
+    dependencies {
+        dependency(FetchReleaseNotes) {
+            snapshot {
+                onDependencyFailure = FailureAction.FAIL_TO_START
+            }
+            artifacts {
+                artifactRules = "release-notes.txt => release-notes/"
+            }
+        }
+    }
+
     steps {
         script {
             id = "COMMIT_TS"
             name = "Get Commit Timestamp"
-            scriptContent = """
-                TS=$(git log -1 --format='%cI' HEAD)
-                echo "##teamcity[setParameter name='build.timestamp' value='${'$'}TS']"
-            """.trimIndent()
-        }
-
-        script {
-            id = "FETCH_NOTES"
-            name = "Fetch Release Notes"
-            scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%' || true"
-            dockerImage = DOCKER_IMAGE
-            dockerRunParameters = "$CACHE_MOUNT -e MARKETING_URL=%env.MARKETING_URL%"
-            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
+            scriptContent = "sh scripts/get_commit_timestamp.sh"
         }
 
         maven {
@@ -67,14 +102,12 @@ object DocsBuild : BuildType({
             name = "Create Reproducible Archive"
             scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%' '%build.timestamp%'"
             dockerImage = DOCKER_IMAGE
-            dockerRunParameters = CACHE_MOUNT
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
     }
 
     triggers {
-        vcs {
-        }
+        vcs { }
     }
 
     failureConditions {
