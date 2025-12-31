@@ -10,7 +10,7 @@ COMMIT=$(git rev-parse HEAD)
 TIMESTAMP=$(git log -1 --format='%cI' HEAD)
 
 cleanup() {
-    rm -rf "$CACHE_DIR" docs1.tar.gz docs2.tar.gz release-notes.txt release-notes/
+    rm -rf docs1.tar.gz docs2.tar.gz release-notes.txt release-notes/
 }
 trap cleanup EXIT
 
@@ -36,24 +36,46 @@ fi
 echo ""
 
 # ============================================
-# Test 2: Fallback behavior
+# Test 2: Fallback behavior (no cache)
 # ============================================
-echo "--- Test 2: Fallback Behavior ---"
+echo "--- Test 2: Fallback Behavior (no cache) ---"
 
 rm -f release-notes.txt
-CACHE_DIR=$(mktemp -d)
+TEST_CACHE=$(mktemp -d)
 
-echo "Testing with invalid URL..."
-RELEASE_NOTES_CACHE_DIR="$CACHE_DIR" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
+echo "Testing with invalid URL and no cache..."
+CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
 
-if [ -f "$CACHE_DIR/test123.txt" ] && [ -f "release-notes.txt" ]; then
-    echo "✅ PASS: Fallback file and output created"
+if [ -f "release-notes.txt" ] && grep -q "unavailable" release-notes.txt; then
+    echo "✅ PASS: Fallback placeholder created"
 else
-    echo "❌ FAIL: Missing fallback file or output"
+    echo "❌ FAIL: Missing fallback output"
     exit 1
 fi
 
-rm -rf "$CACHE_DIR" release-notes.txt
+rm -rf "$TEST_CACHE" release-notes.txt
+echo ""
+
+# ============================================
+# Test 2b: Cache hit behavior
+# ============================================
+echo "--- Test 2b: Cache Hit Behavior ---"
+
+TEST_CACHE=$(mktemp -d)
+echo "Cached release notes content" > "$TEST_CACHE/release-notes.txt"
+
+echo "Testing with invalid URL but cache exists..."
+CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
+
+if grep -q "Cached release notes content" release-notes.txt; then
+    echo "✅ PASS: Cache hit - used cached content"
+else
+    echo "❌ FAIL: Did not use cached content"
+    cat release-notes.txt
+    exit 1
+fi
+
+rm -rf "$TEST_CACHE" release-notes.txt
 echo ""
 
 # ============================================
