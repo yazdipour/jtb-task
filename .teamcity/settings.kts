@@ -1,4 +1,5 @@
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildFeatures.parallelTests
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 import buildTypes.*
 
@@ -7,23 +8,29 @@ version = "2025.11"
 /*
  * TeamCity Project Configuration - Reproducible Documentation Build
  *
- * Build chain on VCS trigger:
- *   FetchReleaseNotes ──┐
- *   DocsBuild ──────────┼──> ArchiveBuild
- *   TestBuild ──────────┘
+ * Build chain:
+ *                    ┌─> ReleaseNoteBuild ─┐
+ *   TestBuild ───────┤                     ├──> ArchiveBuild
+ *                    └─> DocsBuild ────────┘
  */
 project {
     description = "Automated documentation pipeline with byte-for-byte reproducible builds"
 
-    // Register all build types
-    buildType(ReleaseNoteBuild)
-    buildType(DocsBuild)
-    buildType(TestBuild)
-    buildType(ArchiveBuild)
+    // Define build chain with sequential/parallel
+    val builds = sequential {
+        buildType(TestBuild)
+        parallel {
+            buildType(ReleaseNoteBuild)
+            buildType(DocsBuild)
+        }
+        buildType(ArchiveBuild)
+    }.buildTypes()
 
-    // VCS trigger on ArchiveBuild triggers the whole chain
-    // (FetchReleaseNotes, DocsBuild, TestBuild run in parallel via snapshot dependencies)
-    ArchiveBuild.triggers {
+    // Register all build types
+    builds.forEach { buildType(it) }
+
+    // VCS trigger on the last build triggers the whole chain
+    builds.last().triggers {
         vcs { }
     }
 }

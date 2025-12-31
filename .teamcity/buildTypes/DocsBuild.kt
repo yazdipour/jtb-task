@@ -7,7 +7,6 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
  * Generates Javadoc documentation.
- * Runs in parallel with FetchReleaseNotes.
  */
 object DocsBuild : BuildType({
     id("DocsBuild")

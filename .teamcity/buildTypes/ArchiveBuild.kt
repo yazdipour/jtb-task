@@ -6,7 +6,6 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
  * Creates reproducible archive from Javadoc and release notes.
- * Triggered by VCS, pulls FetchReleaseNotes and DocsBuild in parallel first.
  */
 object ArchiveBuild : BuildType({
     id("ArchiveBuild")
@@ -27,24 +26,11 @@ object ArchiveBuild : BuildType({
     }
 
     dependencies {
-        dependency(ReleaseNoteBuild) {
-            snapshot {
-                onDependencyFailure = FailureAction.FAIL_TO_START
-            }
-            artifacts {
-                artifactRules = "$RELEASE_NOTES_FILE => release-notes/"
-            }
+        artifacts(ReleaseNoteBuild) {
+            artifactRules = "$RELEASE_NOTES_FILE => release-notes/"
         }
-        dependency(DocsBuild) {
-            snapshot {
-                onDependencyFailure = FailureAction.FAIL_TO_START
-            }
-            artifacts {
-                artifactRules = "javadoc/** => $JAVADOC_DIR/"
-            }
-        }
-        snapshot(TestBuild) {
-            onDependencyFailure = FailureAction.FAIL_TO_START
+        artifacts(DocsBuild) {
+            artifactRules = "javadoc/** => $JAVADOC_DIR/"
         }
     }
 

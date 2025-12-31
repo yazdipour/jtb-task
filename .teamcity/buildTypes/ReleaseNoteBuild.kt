@@ -6,7 +6,6 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
  * Fetches release notes and publishes as artifact.
- * Runs in parallel with DocsBuild.
  */
 object ReleaseNoteBuild : BuildType({
     id("ReleaseNoteBuild")

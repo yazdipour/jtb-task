@@ -6,7 +6,6 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
  * Runs tests to verify reproducibility and fallback behavior.
- * Runs in parallel with the main build chain.
  */
 object TestBuild : BuildType({
     id("TestBuild")
