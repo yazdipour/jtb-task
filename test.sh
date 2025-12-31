@@ -44,12 +44,13 @@ rm -f release-notes.txt
 TEST_CACHE=$(mktemp -d)
 
 echo "Testing with invalid URL and no cache..."
-CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
+RELEASE_NOTES_CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
 
-if [ -f "release-notes.txt" ] && grep -q "unavailable" release-notes.txt; then
-    echo "✅ PASS: Fallback placeholder created"
+if [ -f "release-notes.txt" ] && [ -f "$TEST_CACHE/test123.txt.fallback" ]; then
+    echo "✅ PASS: Fallback placeholder created with marker"
 else
-    echo "❌ FAIL: Missing fallback output"
+    echo "❌ FAIL: Missing fallback output or marker"
+    ls -la "$TEST_CACHE/" 2>/dev/null || true
     exit 1
 fi
 
@@ -62,16 +63,17 @@ echo ""
 echo "--- Test 2b: Cache Hit Behavior ---"
 
 TEST_CACHE=$(mktemp -d)
-echo "Cached release notes content" > "$TEST_CACHE/release-notes.txt"
+# Cache file uses commit hash as filename
+echo "Cached release notes content" > "$TEST_CACHE/test123.txt"
 
-echo "Testing with invalid URL but cache exists..."
-CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
+echo "Testing with invalid URL but cache exists (no fallback marker)..."
+RELEASE_NOTES_CACHE_DIR="$TEST_CACHE" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
 
 if grep -q "Cached release notes content" release-notes.txt; then
     echo "✅ PASS: Cache hit - used cached content"
 else
     echo "❌ FAIL: Did not use cached content"
-    cat release-notes.txt
+    cat release-notes.txt 2>/dev/null || echo "(file missing)"
     exit 1
 fi
 
