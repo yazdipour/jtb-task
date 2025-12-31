@@ -40,7 +40,6 @@ object DocsBuild : BuildType({
             id = "COMMIT_TS"
             name = "Get Commit Timestamp"
             scriptContent = """
-                [ -z "%env.MARKETING_URL%" ] && echo "Error: env.MARKETING_URL is required" && exit 1
                 TS=$(git log -1 --format='%cI' HEAD)
                 echo "##teamcity[setParameter name='build.timestamp' value='${'$'}TS']"
             """.trimIndent()

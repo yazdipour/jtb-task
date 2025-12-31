@@ -10,6 +10,6 @@ object ReproducibleDocsProject : Project({
     buildType(DocsBuild)
 
     params {
-        param("env.MARKETING_URL", "https://example.com/release-notes.txt")
+        param("env.MARKETING_URL", "https://example.XXXXX")
     }
 })
