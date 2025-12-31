@@ -22,8 +22,7 @@ object ArchiveBuild : BuildType({
 
     params {
         param("commit.hash", "%build.vcs.number%")
-        // Reuse timestamp from DocsBuild for consistency
-        param("build.timestamp", "%dep.DocsBuild.build.timestamp%")
+        param("build.timestamp", "")
     }
 
     dependencies {
@@ -36,6 +35,12 @@ object ArchiveBuild : BuildType({
     }
 
     steps {
+        script {
+            id = "COMMIT_TS"
+            name = "Get Commit Timestamp"
+            scriptContent = "sh scripts/get_commit_timestamp.sh"
+        }
+
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
