@@ -1,6 +1,7 @@
 #!/bin/bash
 # Test script to verify reproducible builds
-# Order matches build pipeline: FetchReleaseNotes → DocsBuild
+# Runs in maven:3.9-eclipse-temurin-21 (has mvn, curl, tar, git)
+# docker run --rm -v "$PWD:/w" -w /w maven:3.9-eclipse-temurin-21 bash test.sh
 set -e
 
 echo "=== Reproducible Build Test ==="
@@ -18,15 +19,13 @@ echo "Timestamp: $TIMESTAMP"
 echo ""
 
 # ============================================
-# FetchReleaseNotes tests
-# ============================================
-
 # Test 1: MARKETING_URL validation
+# ============================================
 echo "--- Test 1: MARKETING_URL Required ---"
 
 rm -f release-notes.txt
-OUTPUT=$(docker run --rm -v "$PWD:/w" -w /w alpine:3.19 \
-    sh scripts/fetch_release_notes.sh test456 "" 2>&1 || true)
+OUTPUT=$(sh scripts/fetch_release_notes.sh test456 "" 2>&1 || true)
+
 if echo "$OUTPUT" | grep -q "marketing-url is required"; then
     echo "✅ PASS: MARKETING_URL validation works"
 else
@@ -36,17 +35,16 @@ else
 fi
 echo ""
 
-# Test 2: Fallback behavior - invalid URL should not fail
+# ============================================
+# Test 2: Fallback behavior
+# ============================================
 echo "--- Test 2: Fallback Behavior ---"
 
 rm -f release-notes.txt
 CACHE_DIR=$(mktemp -d)
 
 echo "Testing with invalid URL..."
-docker run --rm -v "$PWD:/w" -w /w \
-    -e RELEASE_NOTES_CACHE_DIR=/cache \
-    -v "$CACHE_DIR:/cache" \
-    alpine:3.19 sh -c "apk add -q curl && sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist'" || true
+RELEASE_NOTES_CACHE_DIR="$CACHE_DIR" sh scripts/fetch_release_notes.sh test123 'http://invalid.invalid/does-not-exist' || true
 
 if [ -f "$CACHE_DIR/test123.txt" ] && [ -f "release-notes.txt" ]; then
     echo "✅ PASS: Fallback file and output created"
@@ -59,10 +57,8 @@ rm -rf "$CACHE_DIR" release-notes.txt
 echo ""
 
 # ============================================
-# DocsBuild tests
-# ============================================
-
 # Test 3: Commit timestamp script
+# ============================================
 echo "--- Test 3: Commit Timestamp Script ---"
 
 OUTPUT=$(sh scripts/get_commit_timestamp.sh)
@@ -74,25 +70,22 @@ else
 fi
 echo ""
 
-# Test 4: Reproducibility - same commit should produce identical archives
+# ============================================
+# Test 4: Reproducibility
+# ============================================
 echo "--- Test 4: Reproducibility ---"
 
-# Create fake release notes for reproducibility test
 mkdir -p release-notes
 echo "Test release notes" > release-notes/release-notes.txt
 
-# Build 1
 echo "Building archive #1..."
 mvn -B -q clean javadoc:javadoc -Dproject.build.outputTimestamp="$TIMESTAMP"
-docker run --rm -v "$PWD:/w" -w /w alpine:3.19 \
-    sh -c "apk add -q tar && sh scripts/create_archive.sh '$COMMIT' '$TIMESTAMP'" > /dev/null
+sh scripts/create_archive.sh "$COMMIT" "$TIMESTAMP" > /dev/null
 mv docs.tar.gz docs1.tar.gz
 
-# Build 2
 echo "Building archive #2..."
 mvn -B -q clean javadoc:javadoc -Dproject.build.outputTimestamp="$TIMESTAMP"
-docker run --rm -v "$PWD:/w" -w /w alpine:3.19 \
-    sh -c "apk add -q tar && sh scripts/create_archive.sh '$COMMIT' '$TIMESTAMP'" > /dev/null
+sh scripts/create_archive.sh "$COMMIT" "$TIMESTAMP" > /dev/null
 mv docs.tar.gz docs2.tar.gz
 
 HASH1=$(sha256sum docs1.tar.gz | cut -d' ' -f1)
