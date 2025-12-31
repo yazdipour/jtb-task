@@ -6,8 +6,6 @@ version = "2025.11"
  * TeamCity Project Configuration - Reproducible Documentation Build
  */
 project {
-    id("ReproducibleDocsProject")
-    name = "Reproducible Documentation"
     description = "Automated documentation pipeline with byte-for-byte reproducible builds"
 
     buildType(FetchReleaseNotes)
