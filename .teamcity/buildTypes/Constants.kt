@@ -1,3 +1,5 @@
+package _Self.buildTypes
+
 /** Shared constants for build configurations */
 
 const val DOCKER_IMAGE_ALPINE = "alpine:3.19"

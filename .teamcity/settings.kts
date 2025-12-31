@@ -1,4 +1,5 @@
 import jetbrains.buildServer.configs.kotlin.*
+import _Self.buildTypes.*
 
 version = "2025.11"
 
@@ -15,9 +16,4 @@ project {
 
     // Build order in UI
     buildTypesOrder = listOf(FetchReleaseNotes, DocsBuild, ArchiveBuild, TestBuild)
-
-    params {
-        // Prevent UI edits that would conflict with DSL
-        param("teamcity.ui.settings.readOnly", "true")
-    }
 }
