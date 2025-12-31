@@ -10,7 +10,7 @@ public class App {
      * @return greeting string
      */
     public static String getGreeting() {
-        return "Hello from Marc!";
+        return "Hello World!";
     }
 
     /**
