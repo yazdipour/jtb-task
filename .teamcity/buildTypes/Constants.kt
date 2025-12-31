@@ -1,4 +1,4 @@
-package _Self.buildTypes
+package buildTypes
 
 /** Shared constants for build configurations */
 

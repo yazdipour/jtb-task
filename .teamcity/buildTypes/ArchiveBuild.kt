@@ -1,4 +1,4 @@
-package _Self.buildTypes
+package buildTypes
 
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
@@ -6,7 +6,7 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
 /**
  * Creates reproducible archive from Javadoc and release notes.
- * Depends on both FetchReleaseNotes and DocsBuild.
+ * Triggered by VCS, pulls FetchReleaseNotes and DocsBuild in parallel first.
  */
 object ArchiveBuild : BuildType({
     id("ArchiveBuild")

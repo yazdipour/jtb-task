@@ -1,13 +1,12 @@
-package _Self.buildTypes
+package buildTypes
 
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
 /**
  * Runs tests to verify reproducibility and fallback behavior.
- * Triggered on every push, runs after DocsBuild.
+ * Runs in parallel with the main build chain.
  */
 object TestBuild : BuildType({
     id("TestBuild")
@@ -27,10 +26,6 @@ object TestBuild : BuildType({
             dockerImage = DOCKER_IMAGE_MAVEN
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
-    }
-
-    triggers {
-        vcs { }
     }
 
     failureConditions {

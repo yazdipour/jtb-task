@@ -1,13 +1,12 @@
-package _Self.buildTypes
+package buildTypes
 
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
 /**
  * Fetches release notes and publishes as artifact.
- * Runs once per commit, result is shared with dependent builds.
+ * Runs in parallel with DocsBuild.
  */
 object FetchReleaseNotes : BuildType({
     id("FetchReleaseNotes")
@@ -33,10 +32,6 @@ object FetchReleaseNotes : BuildType({
             dockerImage = DOCKER_IMAGE_ALPINE
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
         }
-    }
-
-    triggers {
-        vcs { }
     }
 
     failureConditions {
