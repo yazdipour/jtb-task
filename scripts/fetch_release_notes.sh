@@ -1,10 +1,14 @@
 #!/bin/sh
 # Fetch release notes and output to release-notes.txt
+# Usage: ./fetch_release_notes.sh <commit-hash> <marketing-url>
 set -eu
 
-[ -z "${MARKETING_URL:-}" ] && echo "Error: MARKETING_URL is required" && exit 1
-
 COMMIT_HASH="$1"
+MARKETING_URL="$2"
+
+[ -z "$COMMIT_HASH" ] && echo "Error: commit-hash is required" && exit 1
+[ -z "$MARKETING_URL" ] && echo "Error: marketing-url is required" && exit 1
+
 CACHE_DIR="${RELEASE_NOTES_CACHE_DIR:-/tmp/cache}"
 CACHE_FILE="$CACHE_DIR/$COMMIT_HASH.txt"
 FALLBACK_MARKER="$CACHE_FILE.fallback"

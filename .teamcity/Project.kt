@@ -9,9 +9,10 @@ object ReproducibleDocsProject : Project({
 
     buildType(FetchReleaseNotes)
     buildType(DocsBuild)
+    buildType(TestBuild)
 
     // Build order in UI
-    buildTypesOrder = listOf(FetchReleaseNotes, DocsBuild)
+    buildTypesOrder = listOf(FetchReleaseNotes, DocsBuild, TestBuild)
 
     params {
         param("env.MARKETING_URL", "https://example.XXXXX")
