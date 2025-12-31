@@ -24,11 +24,14 @@ echo ""
 # Test 1: MARKETING_URL validation
 echo "--- Test 1: MARKETING_URL Required ---"
 
-if docker run --rm -v "$PWD:/w" -w /w alpine:3.19 \
-    sh -c "sh scripts/fetch_release_notes.sh test456 ''" 2>&1 | grep -q "marketing-url is required"; then
+rm -f release-notes.txt
+OUTPUT=$(docker run --rm -v "$PWD:/w" -w /w alpine:3.19 \
+    sh scripts/fetch_release_notes.sh test456 "" 2>&1 || true)
+if echo "$OUTPUT" | grep -q "marketing-url is required"; then
     echo "✅ PASS: MARKETING_URL validation works"
 else
     echo "❌ FAIL: MARKETING_URL validation missing"
+    echo "Output was: $OUTPUT"
     exit 1
 fi
 echo ""
@@ -36,6 +39,7 @@ echo ""
 # Test 2: Fallback behavior - invalid URL should not fail
 echo "--- Test 2: Fallback Behavior ---"
 
+rm -f release-notes.txt
 CACHE_DIR=$(mktemp -d)
 
 echo "Testing with invalid URL..."

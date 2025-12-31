@@ -37,4 +37,4 @@ else
 fi
 
 # Output for artifact
-cp "$CACHE_FILE" release-notes.txt
+cp -f "$CACHE_FILE" release-notes.txt
