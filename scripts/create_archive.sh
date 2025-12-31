@@ -3,17 +3,16 @@
 set -eu
 
 COMMIT_HASH="$1"
+TIMESTAMP="$2"
 CACHE_DIR="${RELEASE_NOTES_CACHE_DIR:-release-notes}"
 RELEASE_NOTES="$CACHE_DIR/$COMMIT_HASH.txt"
 JAVADOC_DIR="target/reports/apidocs"
 STAGING_DIR=".archive-staging"
 
-if [ -f "$RELEASE_NOTES" ]; then
-    TIMESTAMP=$(stat -c '%Y' "$RELEASE_NOTES")
-    MTIME=$(date -u -d "@$TIMESTAMP" '+%Y-%m-%d %H:%M:%S')
-else
-    MTIME="1980-01-01 00:00:00"
-fi
+# Convert ISO 8601 to tar-compatible format
+MTIME=$(echo "$TIMESTAMP" | sed 's/T/ /; s/+.*//' )
+
+echo "Using timestamp: $MTIME"
 
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR/docs/javadoc" "$STAGING_DIR/docs/release-notes"

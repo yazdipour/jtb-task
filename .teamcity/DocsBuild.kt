@@ -37,6 +37,15 @@ object DocsBuild : BuildType({
 
     steps {
         script {
+            id = "COMMIT_TS"
+            name = "Get Commit Timestamp"
+            scriptContent = """
+                TS=$(git log -1 --format='%cI' HEAD)
+                echo "##teamcity[setParameter name='build.timestamp' value='${'$'}TS']"
+            """.trimIndent()
+        }
+
+        script {
             id = "FETCH_NOTES"
             name = "Fetch Release Notes"
             scriptContent = "apk add -q curl && sh scripts/fetch_release_notes.sh '%commit.hash%' || true"
@@ -56,7 +65,7 @@ object DocsBuild : BuildType({
         script {
             id = "ARCHIVE"
             name = "Create Reproducible Archive"
-            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%'"
+            scriptContent = "apk add -q tar && sh scripts/create_archive.sh '%commit.hash%' '%build.timestamp%'"
             dockerImage = DOCKER_IMAGE
             dockerRunParameters = CACHE_MOUNT
             dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux

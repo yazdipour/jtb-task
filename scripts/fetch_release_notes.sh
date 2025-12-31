@@ -1,5 +1,5 @@
 #!/bin/sh
-# Fetch release notes, cache by commit hash, output timestamp for reproducibility
+# Fetch release notes and cache by commit hash
 set -eu
 
 COMMIT_HASH="$1"
@@ -22,8 +22,3 @@ else
         echo "FALLBACK: created empty placeholder"
     fi
 fi
-
-# Output timestamp (ISO 8601 for Maven)
-TIMESTAMP=$(stat -c '%Y' "$CACHE_FILE")
-ISO_TIME=$(date -u -d "@$TIMESTAMP" '+%Y-%m-%dT%H:%M:%SZ')
-echo "##teamcity[setParameter name='build.timestamp' value='$ISO_TIME']"
