@@ -31,6 +31,8 @@ project {
 
     // VCS trigger on the last build triggers the whole chain
     builds.last().triggers {
-        vcs { }
+        vcs { 
+        // branchFilter = "+:refs/heads/(main|master)"
+        }
     }
 }
